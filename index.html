@@ -289,7 +289,9 @@
           <option value="strength">健身/运动</option>
           <option value="intelligence">书籍/课程</option>
           <option value="charisma">社交活动</option>
-          <option value="health">饮食</option>
+          <option value="health">美食饮品</option>
+          <option value="luxury">奢侈消费</option>
+          <option value="daily">日常开销</option>
         </select>
         
         <button id="addExpenseBtn">记录消费</button>
@@ -335,7 +337,7 @@
         
         <button id="setAttrBtn">设定数值</button>
 
-	<div class="version-text">Version: 1.5.1.1</div>
+	<div class="version-text">Version: 1.5.2.4</div>
       </div>
     </div>
   </div>
@@ -348,14 +350,6 @@
   </div>
   
   <script>
-    // 基础属性成本
-    const baseCosts = {
-      strength: 50,
-      intelligence: 50,
-      charisma: 50,
-      health: 40
-    };
-
     // 初始状态
     const state = JSON.parse(localStorage.getItem('charState')) || {
       strength: 100,
@@ -463,23 +457,46 @@
       updateDifficultyUI();
     }
 
-    // 计算属性提升成本
-    function getCost(attr) {
-      let base = baseCosts[attr] || 50;
-      const current = state[attr];
-      
-      // 健康值特殊处理
-      if (attr === 'health') {
-        return base;
+    // 根据属性值获取提升浮动值
+    function getIncreaseValue(currentValue) {
+      if (currentValue <= 1000) return Math.floor(Math.random() * 5) + 1;
+      if (currentValue <= 4000) return Math.floor(Math.random() * 4) + 1;
+      if (currentValue <= 7000) return Math.floor(Math.random() * 3) + 1;
+      return Math.floor(Math.random() * 2) + 1;
+    }
+
+    // 获取下降浮动值
+    function getDecreaseValue() {
+      return Math.floor(Math.random() * 3) + 1;
+    }
+
+    // 处理属性变化
+    function handleAttributeChange(attr, effectType, effectMessage) {
+      if (effectType === 'increase') {
+        const increaseValue = getIncreaseValue(state[attr]);
+        state[attr] += increaseValue;
+        effectMessage += `↑ ${getAttributeName(attr)} +${increaseValue}\n`;
+      } else if (effectType === 'decrease') {
+        const decreaseValue = getDecreaseValue();
+        const actualDecrease = Math.min(decreaseValue, state[attr]);
+        state[attr] -= actualDecrease;
+        effectMessage += `↓ ${getAttributeName(attr)} -${actualDecrease}\n`;
       }
-      
-      if (current < 500) {
-        return Math.round(base * (1 + current / 50));
-      } else if (current < 5000) {
-        return Math.round(base * (1 + current / 10));
-      } else {
-        return Math.round(base * (5 + current / 5));
-      }
+      return effectMessage;
+    }
+
+    // 检查是否触发效果
+    function checkEffectTrigger(chance) {
+      return Math.random() < chance;
+    }
+
+    // 获取属性中文名称
+    function getAttributeName(attr) {
+      const names = {
+        strength: '力量', agility: '敏捷', intelligence: '智力',
+        charisma: '魅力', health: '健康', gluttony: '暴食', greed: '贪婪'
+      };
+      return names[attr] || attr;
     }
 
     // 头像上传功能
@@ -500,8 +517,7 @@
     document.getElementById('addExpenseBtn').addEventListener('click', function() {
       let amount = parseFloat(document.getElementById('amount').value);
       let category = document.getElementById('category').value;
-      let effectMessage = '';
-      let enableNegative = state.enableNegative;
+      let effectMessage = `消费 ${amount} 金币\n`;
 
       if (!amount || amount <= 0) {
         alert('请输入有效的金额');
@@ -513,8 +529,11 @@
         return;
       }
 
-      // 负面状态模式效果
-      if (state.enableNegativeStates) {
+      // 先扣除金币
+      state.gold -= amount;
+
+      // 负面状态模式效果 - 仅对特定消费类型增加暴食和贪婪
+      if (state.enableNegativeStates && ['health', 'luxury'].includes(category)) {
         const gluttonyIncrease = Math.floor(amount / 50);
         const greedIncrease = Math.floor(amount / 100);
         state.gluttony = Math.min(100, state.gluttony + gluttonyIncrease);
@@ -522,82 +541,174 @@
         effectMessage += `↑ 暴食 +${gluttonyIncrease}\n↑ 贪婪 +${greedIncrease}\n`;
       }
 
-      // 定义每个用途可能影响的属性及其权重
-      const categoryEffects = {
-          'strength': { strength: 0.5, charisma: 0.2, health: 0.1 },
-          'intelligence': { intelligence: 0.5, charisma: 0.2, health: 0.1 },
-          'charisma': { agility: 0.3, charisma: 0.4, health: 0.1 },
-          'health': { strength: 0.4, agility: 0.3, health: 0.3 }
-      };
+      // 副作用模式ON的处理
+      if (state.enableNegative) {
+        switch (category) {
+          case 'strength': // 健身/运动
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('strength', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('agility', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('gluttony', 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('health', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.15)) {
+              effectMessage = handleAttributeChange('intelligence', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('greed', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            break;
 
-      // 先扣除金币
-      state.gold -= amount;
-      effectMessage = `消费 ${amount} 金币\n`;
-      let totalGained = 0;
+          case 'intelligence': // 书籍/课程
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('greed', 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.35)) {
+              effectMessage = handleAttributeChange('strength', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('health', 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.15)) {
+              effectMessage = handleAttributeChange('agility', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('gluttony', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            break;
 
-      // 随机选择1-3个受影响的属性
-      const possibleEffects = Object.keys(categoryEffects[category]);
-      const selectedEffects = [];
-      const numEffects = Math.min(possibleEffects.length, Math.floor(Math.random() * 3) + 1);
-    
-      while (selectedEffects.length < numEffects) {
-          const randomIndex = Math.floor(Math.random() * possibleEffects.length);
-          const attr = possibleEffects[randomIndex];
-          if (!selectedEffects.includes(attr)) {
-            selectedEffects.push(attr);
-          }
+          case 'charisma': // 社交活动
+            if (checkEffectTrigger(0.35)) {
+              effectMessage = handleAttributeChange('charisma', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('health', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('strength', 'decrease', effectMessage);
+            }
+            break;
+
+          case 'health': // 美食饮品
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('gluttony', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('health', 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('strength', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('agility', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.15)) {
+              effectMessage = handleAttributeChange('intelligence', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('greed', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            break;
+
+          case 'luxury': // 奢侈消费
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('greed', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('intelligence', 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('agility', 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('health', 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.15)) {
+              effectMessage = handleAttributeChange('gluttony', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            break;
+
+          case 'daily': // 日常开销
+            if (checkEffectTrigger(0.15)) {
+              effectMessage = handleAttributeChange('strength', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('agility', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('intelligence', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('charisma', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('health', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            break;
+        }
+      } else {
+        // 副作用模式OFF的处理
+        switch (category) {
+          case 'strength': // 健身/运动
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('strength', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('agility', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('health', 'increase', effectMessage);
+            }
+            break;
+
+          case 'intelligence': // 书籍/课程
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('strength', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('agility', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('health', 'increase', effectMessage);
+            }
+            break;
+
+          case 'charisma': // 社交活动
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('health', 'increase', effectMessage);
+            }
+            break;
+
+          case 'health': // 美食饮品
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+            }
+            break;
+
+          case 'luxury': // 奢侈消费
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+            }
+            break;
+
+          case 'daily': // 日常开销
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('strength', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('agility', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('health', 'increase', effectMessage);
+            }
+            break;
+        }
       }
 
-      // 计算属性提升
-      selectedEffects.forEach(attr => {
-          const weight = categoryEffects[category][attr];
-          const gained = Math.max(1, Math.floor(amount * weight / 50));
-          
-          if (attr === 'health') {
-              const maxCanGain = 100 - state.health;
-              if (maxCanGain > 0) {
-                  const actualGain = Math.min(5, gained, maxCanGain);
-                  state.health += actualGain;
-                  effectMessage += `↑ ${getAttributeName(attr)} +${actualGain}\n`;
-                  totalGained += actualGain;
-              }
-          } else {
-              state[attr] += gained;
-              effectMessage += `↑ ${getAttributeName(attr)} +${gained}\n`;
-              totalGained += gained;
-          }
-      });
-
-      // 副作用处理
-      if (enableNegative && totalGained > 0) {
-          const allAttributes = ['strength', 'agility', 'intelligence', 'charisma', 'health'];
-          const unaffectedAttrs = allAttributes.filter(attr => !possibleEffects.includes(attr));
-          
-          if (unaffectedAttrs.length > 0 && Math.random() < 0.3) {
-              const randomAttr = unaffectedAttrs[Math.floor(Math.random() * unaffectedAttrs.length)];
-              let decreased = Math.floor(Math.random() * 3) + 1;
-              
-              if (randomAttr === 'health') {
-                  decreased = Math.min(decreased, state.health);
-                  state.health -= decreased;
-              } else {
-                  decreased = Math.min(decreased, state[randomAttr]);
-                  state[randomAttr] -= decreased;
-              }
-              
-              if (decreased > 0) {
-                  effectMessage += `↓ ${getAttributeName(randomAttr)} -${decreased}\n`;
-              }
-          }
+      // 如果没有属性变化，添加提示
+      if (effectMessage === `消费 ${amount} 金币\n`) {
+        effectMessage += "(属性无变化)\n";
       }
 
       save();
       document.getElementById('amount').value = '';
-      
-      if (totalGained === 0 && !effectMessage.includes('↓')) {
-          effectMessage += "(属性已达上限或提升效果不明显)";
-      }
-      
       alert(effectMessage);
     });
 
@@ -615,15 +726,6 @@
       document.getElementById('incomeAmount').value = '';
       alert(`成功增加 ${amount} 金币！`);
     });
-
-    // 获取属性中文名称
-    function getAttributeName(attr) {
-      const names = {
-        strength: '力量', agility: '敏捷', intelligence: '智力',
-        charisma: '魅力', health: '健康', gluttony: '暴食', greed: '贪婪'
-      };
-      return names[attr] || attr;
-    }
 
     // 设定数值按钮事件
     document.getElementById('setAttrBtn').addEventListener('click', function() {
