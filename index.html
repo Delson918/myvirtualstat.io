@@ -422,57 +422,117 @@
         return;
       }
 
+      // 定义每个用途可能影响的属性及其权重
+      const categoryEffects = {
+          'strength': { // 健身/运动
+              strength: 0.5,
+              charisma: 0.2,
+              willpower: 0.2,
+              health: 0.1
+          },
+          'intelligence': { // 书籍/课程
+              intelligence: 0.5,
+              charisma: 0.2,
+              willpower: 0.2,
+              health: 0.1
+          },
+          'charisma': { // 社交活动
+              agility: 0.3,
+              charisma: 0.4,
+              willpower: 0.2,
+              health: 0.1
+          },
+          'willpower': { // 奢侈消费
+              agility: 0.3,
+              intelligence: 0.2,
+              charisma: 0.3,
+              willpower: 0.2
+          },
+          'health': { // 饮食
+              strength: 0.4,
+              agility: 0.3,
+              health: 0.3
+          }
+      };
+
+
       // 先扣除全部输入的金币
       state.gold -= amount;
-      let remainingAmount = amount;
-      let costPerPoint = getCost(category);
-      let gained = 0;
-      let sideEffectMessage = '';
+      let effectMessage = `消费 ${amount} 金币\n`;
+      let totalGained = 0;
+
+      // 随机选择1-3个受影响的属性
+      const possibleEffects = Object.keys(categoryEffects[category]);
+      const selectedEffects = [];
+      const numEffects = Math.min(possibleEffects.length, Math.floor(Math.random() * 3) + 1); // 1-3个属性
+    
+      // 随机选择属性
+      while (selectedEffects.length < numEffects) {
+          const randomIndex = Math.floor(Math.random() * possibleEffects.length);
+          const attr = possibleEffects[randomIndex];
+          if (!selectedEffects.includes(attr)) {
+            selectedEffects.push(attr);
+          }
+      }
+
+      // 计算每个被选中的属性的提升
+      selectedEffects.forEach(attr => {
+          const weight = categoryEffects[category][attr];
+          // 计算提升点数 (基于金额和权重)
+          const gained = Math.max(1, Math.floor(amount * weight / 50)); // 确保至少提升1点
+
 
       // 健康值特殊处理
-      if (category === 'health') {
-        // 计算能用多少金币提升健康值（最多5点）
-        const maxAffordablePoints = Math.min(5, Math.floor(remainingAmount / costPerPoint));
-        if (maxAffordablePoints > 0) {
-          state.health = Math.min(100, state.health + maxAffordablePoints);
-          gained = maxAffordablePoints;
-        }
-      } 
-      // 其他属性处理
-      else {
-        while (remainingAmount >= costPerPoint && state[category] < 10000) {
-          state[category]++;
-          remainingAmount -= costPerPoint;
-          costPerPoint = getCost(category); // 动态更新单点成本
-          gained++;
-        }
+      if (attr === 'health') {
+          const maxCanGain = 100 - state.health;
+          if (maxCanGain > 0) {
+              const actualGain = Math.min(5, gained, maxCanGain);
+              state.health += actualGain;
+              effectMessage += `↑ ${getAttributeName(attr)} +${actualGain}\n`;
+              totalGained += actualGain;
+          }
+      } else {
+          // 其他属性
+          state[attr] += gained;
+          effectMessage += `↑ ${getAttributeName(attr)} +${gained}\n`;
+          totalGained += gained;
       }
+  });
 
       // 副作用处理
-      if (enableNegative && gained > 0) {
-        const keys = ['strength', 'agility', 'intelligence', 'charisma', 'willpower', 'health'];
-        const opposite = keys.filter(k => k !== category);
-        if (Math.random() < 0.3) {
-          let randomAttr = opposite[Math.floor(Math.random() * opposite.length)];
-          if (randomAttr === 'health') {
-            const decrease = Math.floor(Math.random() * 5) + 1;
-            state.health = Math.max(0, state.health - decrease);
-	    sideEffectMessage = `，${getAttributeName(randomAttr)}降低了 ${decrease} 点`;
-          } else if (state[randomAttr] > 0) {
-            state[randomAttr]--;
-	    sideEffectMessage = `，${getAttributeName(randomAttr)}降低了 1 点`;
+      if (enableNegative && totalGained > 0) {
+        const allAttributes = ['strength', 'agility', 'intelligence', 'charisma', 'willpower', 'health'];
+          // 找出未被当前用途影响的属性
+          const unaffectedAttrs = allAttributes.filter(attr => !possibleEffects.includes(attr));
+        
+          if (unaffectedAttrs.length > 0 && Math.random() < 0.3) {
+              const randomAttr = unaffectedAttrs[Math.floor(Math.random() * unaffectedAttrs.length)];
+              let decreased = Math.floor(Math.random() * 3) + 1; // 降低1-3点
+            
+              if (randomAttr === 'health') {
+                  decreased = Math.min(decreased, state.health);
+                  state.health -= decreased;
+              } else {
+                  decreased = Math.min(decreased, state[randomAttr]);
+                  state[randomAttr] -= decreased;
+              }
+            
+              if (decreased > 0) {
+                  effectMessage += `↓ ${getAttributeName(randomAttr)} -${decreased}\n`;
+              }
           }
-        }
       }
 
+
       save();
-      let message = `消费 ${amount} 金币`;
-      if (gained > 0) {message += `，${getAttributeName(category)}提升了 ${gained} 点`;
+      document.getElementById('amount').value = '';
+    
+      // 如果没有提升且没有副作用
+      if (totalGained === 0 && !effectMessage.includes('↓')) {
+          effectMessage += "(属性已达上限或提升效果不明显)";
       }
-      if (sideEffectMessage) {
-        message += sideEffectMessage;
-      }
-      alert(message);
+    
+      alert(effectMessage);
 });
 
     // 记录收入按钮事件
