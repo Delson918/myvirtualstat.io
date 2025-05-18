@@ -422,29 +422,31 @@
         return;
       }
 
-      let gained = 0;
+      // 先扣除全部输入的金币
+      state.gold -= amount;
+      let remainingAmount = amount;
       let costPerPoint = getCost(category);
-      let totalCost = 0;
+      let gained = 0;
+      let sideEffectMessage = '';
 
       // 健康值特殊处理
       if (category === 'health') {
-        // 健康值每次提升1-5点
-        const points = Math.min(5, Math.max(1, Math.floor(amount / costPerPoint)));
-        state.health = Math.min(100, state.health + points);
-        totalCost = points * costPerPoint;
-        gained = points;
-      } else {
-        // 其他属性正常提升
-        while (amount >= costPerPoint && state[category] < 10000) {
+        // 计算能用多少金币提升健康值（最多5点）
+        const maxAffordablePoints = Math.min(5, Math.floor(remainingAmount / costPerPoint));
+        if (maxAffordablePoints > 0) {
+          state.health = Math.min(100, state.health + maxAffordablePoints);
+          gained = maxAffordablePoints;
+        }
+      } 
+      // 其他属性处理
+      else {
+        while (remainingAmount >= costPerPoint && state[category] < 10000) {
           state[category]++;
-          amount -= costPerPoint;
-          totalCost += costPerPoint;
-          costPerPoint = getCost(category);
+          remainingAmount -= costPerPoint;
+          costPerPoint = getCost(category); // 动态更新单点成本
           gained++;
         }
       }
-
-      state.gold -= totalCost;
 
       // 副作用处理
       if (enableNegative && gained > 0) {
@@ -453,19 +455,25 @@
         if (Math.random() < 0.3) {
           let randomAttr = opposite[Math.floor(Math.random() * opposite.length)];
           if (randomAttr === 'health') {
-            // 健康值减少1-5点
             const decrease = Math.floor(Math.random() * 5) + 1;
             state.health = Math.max(0, state.health - decrease);
+	    sideEffectMessage = `，${getAttributeName(randomAttr)}降低了 ${decrease} 点`;
           } else if (state[randomAttr] > 0) {
             state[randomAttr]--;
+	    sideEffectMessage = `，${getAttributeName(randomAttr)}降低了 1 点`;
           }
         }
       }
 
       save();
-      document.getElementById('amount').value = '';
-      alert(`成功提升 ${gained} 点${getAttributeName(category)}！消耗 ${totalCost} 金币`);
-    });
+      let message = `消费 ${amount} 金币`;
+      if (gained > 0) {message += `，${getAttributeName(category)}提升了 ${gained} 点`;
+      }
+      if (sideEffectMessage) {
+        message += sideEffectMessage;
+      }
+      alert(message);
+});
 
     // 记录收入按钮事件
     document.getElementById('addIncomeBtn').addEventListener('click', function() {
