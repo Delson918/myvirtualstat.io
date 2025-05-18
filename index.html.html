@@ -1,0 +1,534 @@
+<!DOCTYPE html><html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>主角养成器</title>
+  <style>
+    body {
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    h1 {
+      color: #7fffd4;
+      text-align: center;
+      padding: 15px 0;
+      margin: 0;
+      background: #1a1a1a;
+    }
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+    }
+    .section {
+      background: #1e1e1e;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px #444;
+    }
+    label, input, select, button {
+      font-size: 16px;
+      margin: 5px 0;
+    }
+    input, select {
+      padding: 8px;
+      background: #2c2c2c;
+      border: none;
+      color: #fff;
+      border-radius: 6px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      background: #4caf50;
+      border: none;
+      padding: 10px 16px;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: #45a049;
+      transform: translateY(-2px);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .attr {
+      margin: 12px 0;
+      display: flex;
+      align-items: center;
+    }
+    .attr span:first-child {
+      display: inline-block;
+      width: 100px;
+      font-weight: bold;
+    }
+    .attr span:last-child {
+      flex: 1;
+      text-align: right;
+      font-family: 'Courier New', monospace;
+    }
+    .tab-bar {
+      display: flex;
+      background: #1a1a1a;
+      border-top: 1px solid #333;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 16px 0;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+    .tab:hover {
+      background: #2a2a2a;
+    }
+    .tab.active {
+      background: #333;
+      color: #7fffd4;
+      font-weight: bold;
+    }
+    .page {
+      display: none;
+      animation: fadeIn 0.3s ease-out;
+    }
+    .page.active {
+      display: block;
+    }
+    .avatar-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 25px;
+    }
+    .avatar {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background-color: #2c2c2c;
+      border: 3px solid #7fffd4;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 0 15px rgba(127, 255, 212, 0.3);
+    }
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .avatar-upload {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: rgba(0,0,0,0.7);
+      text-align: center;
+      padding: 8px 0;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    .avatar-upload:hover {
+      background: rgba(0,0,0,0.9);
+    }
+    .avatar-upload input {
+      display: none;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .progress-container {
+      width: 100%;
+      background-color: #2c2c2c;
+      border-radius: 5px;
+      margin: 5px 0;
+      height: 10px;
+    }
+    .progress-bar {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.5s ease-out;
+    }
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      margin: 10px 0;
+    }
+    .checkbox-container input {
+      width: auto;
+      margin-right: 10px;
+    }
+    .income-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #444;
+    }
+    .tab-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>主角养成器</h1>
+  
+  <div class="content">
+    <!-- 角色属性页 -->
+    <div id="attributesPage" class="page active">
+      <div class="section">
+        <h2>角色属性</h2>
+        <div class="avatar-container">
+          <div class="avatar" id="avatarDisplay">
+            <img id="avatarImage" src="" alt="头像">
+            <label class="avatar-upload">
+              上传头像
+              <input type="file" id="avatarInput" accept="image/*">
+            </label>
+          </div>
+        </div>
+        <div class="attr"><span>力量:</span> <span id="strength">100</span></div>
+        <div class="progress-container"><div class="progress-bar" id="strengthBar" style="width: 1%"></div></div>
+        
+        <div class="attr"><span>敏捷:</span> <span id="agility">100</span></div>
+        <div class="progress-container"><div class="progress-bar" id="agilityBar" style="width: 1%"></div></div>
+        
+        <div class="attr"><span>智力:</span> <span id="intelligence">100</span></div>
+        <div class="progress-container"><div class="progress-bar" id="intelligenceBar" style="width: 1%"></div></div>
+        
+        <div class="attr"><span>魅力:</span> <span id="charisma">100</span></div>
+        <div class="progress-container"><div class="progress-bar" id="charismaBar" style="width: 1%"></div></div>
+        
+        <div class="attr"><span>毅力:</span> <span id="willpower">100</span></div>
+        <div class="progress-container"><div class="progress-bar" id="willpowerBar" style="width: 1%"></div></div>
+        
+        <div class="attr"><span>健康:</span> <span id="health">100</span></div>
+        <div class="progress-container"><div class="progress-bar" id="healthBar" style="width: 100%"></div></div>
+        
+        <div class="attr"><span>金币:</span> <span id="gold">0</span></div>
+      </div>
+    </div>
+    
+    <!-- 记录消费页 -->
+    <div id="expensePage" class="page">
+      <div class="section">
+        <h2>记录消费</h2>
+        <label class="tab-label">消费金额 (MYR):</label>
+        <input type="number" id="amount" placeholder="输入消费金额" min="1" />
+        
+        <label class="tab-label">用途:</label>
+        <select id="category">
+          <option value="strength">健身/运动</option>
+          <option value="intelligence">书籍/课程</option>
+          <option value="charisma">社交活动</option>
+          <option value="willpower">奢侈消费</option>
+          <option value="health">饮食</option>
+        </select>
+        
+        <button id="addExpenseBtn">记录消费</button>
+        
+        <div class="income-section">
+          <h3>记录收入</h3>
+          <label class="tab-label">收入金额 (MYR):</label>
+          <input type="number" id="incomeAmount" placeholder="输入收入金额" min="1" />
+          <button id="addIncomeBtn">记录收入</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 设置页 -->
+    <div id="settingsPage" class="page">
+      <div class="section">
+        <h2>设置</h2>
+        <div class="checkbox-container">
+          <input type="checkbox" id="enableNegative" />
+          <label for="enableNegative">启用副作用模式 (30%几率降低其他属性)</label>
+        </div>
+        <br />
+        
+        <label>手动调整属性:</label>
+        <select id="attrSelect">
+          <option value="strength">力量</option>
+          <option value="agility">敏捷</option>
+          <option value="intelligence">智力</option>
+          <option value="charisma">魅力</option>
+          <option value="willpower">毅力</option>
+          <option value="health">健康</option>
+          <option value="gold">金币</option>
+        </select>
+        
+        <input type="number" id="newValue" placeholder="输入新数值" min="0" />
+        
+        <button id="setAttrBtn">设定数值</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 底部导航栏 -->
+  <div class="tab-bar">
+    <div class="tab active" data-page="attributesPage">角色属性</div>
+    <div class="tab" data-page="expensePage">记录收支</div>
+    <div class="tab" data-page="settingsPage">设置</div>
+  </div>
+  
+  <script>
+    // 基础属性成本
+    const baseCosts = {
+      strength: 50,
+      intelligence: 50,
+      charisma: 50,
+      willpower: 100,
+      health: 40
+    };
+
+    // 初始状态
+    const state = JSON.parse(localStorage.getItem('charState')) || {
+      strength: 100,
+      agility: 100,
+      intelligence: 100,
+      charisma: 100,
+      willpower: 100,
+      health: 100,
+      gold: 0,
+      avatar: ''
+    };
+
+    // 加载保存的头像
+    if (state.avatar) {
+      document.getElementById('avatarImage').src = state.avatar;
+    }
+
+    // 保存状态到本地存储
+    function save() {
+      // 确保健康值不超过100
+      state.health = Math.min(100, state.health);
+      localStorage.setItem('charState', JSON.stringify(state));
+      updateDisplay();
+    }
+
+    // 更新显示
+    function updateDisplay() {
+      // 更新属性值
+      for (let key in state) {
+        const element = document.getElementById(key);
+        if (element) {
+          element.textContent = state[key];
+        }
+      }
+      
+      // 更新进度条
+      updateProgressBars();
+    }
+
+    // 更新进度条
+    function updateProgressBars() {
+      const maxValues = {
+        strength: 10000,
+        agility: 10000,
+        intelligence: 10000,
+        charisma: 10000,
+        willpower: 10000,
+        health: 100
+      };
+      
+      const attributes = ['strength', 'agility', 'intelligence', 'charisma', 'willpower', 'health'];
+      
+      attributes.forEach(attr => {
+        const bar = document.getElementById(`${attr}Bar`);
+        if (bar) {
+          const percentage = (state[attr] / maxValues[attr]) * 100;
+          bar.style.width = `${percentage}%`;
+          
+          // 设置渐变色
+          if (percentage <= 33) {
+            // 红色到橙色的渐变 (0-33%)
+            bar.style.background = 'linear-gradient(90deg, #ff0000, #ff8000)';
+          } else if (percentage <= 66) {
+            // 橙色到黄色的渐变 (34-66%)
+            bar.style.background = 'linear-gradient(90deg, #ff8000, #ffcc00)';
+          } else {
+            // 黄色到绿色的渐变 (67-100%)
+            bar.style.background = 'linear-gradient(90deg, #ffcc00, #4caf50)';
+          }
+        }
+      });
+    }
+
+    // 计算属性提升成本
+    function getCost(attr) {
+      let base = baseCosts[attr] || 50;
+      const current = state[attr];
+      
+      // 健康值特殊处理
+      if (attr === 'health') {
+        return base; // 健康值成本固定
+      }
+      
+      // 1-500点：低难度（成本增长缓慢）
+      if (current < 500) {
+        return Math.round(base * (1 + current / 50));
+      }
+      // 501-5000点：中等难度（保持原有增长）
+      else if (current < 5000) {
+        return Math.round(base * (1 + current / 10));
+      }
+      // 5001+点：高难度（成本大幅提高）
+      else {
+        return Math.round(base * (5 + current / 5));
+      }
+    }
+
+    // 头像上传功能
+    document.getElementById('avatarInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          state.avatar = event.target.result;
+          document.getElementById('avatarImage').src = event.target.result;
+          save();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // 记录消费按钮事件
+    document.getElementById('addExpenseBtn').addEventListener('click', function() {
+      let amount = parseFloat(document.getElementById('amount').value);
+      let category = document.getElementById('category').value;
+      let enableNegative = document.getElementById('enableNegative').checked;
+
+      if (!amount || amount <= 0) {
+        alert('请输入有效的金额');
+        return;
+      }
+
+      if (state.gold < amount) {
+        alert('金币不足！');
+        return;
+      }
+
+      let gained = 0;
+      let costPerPoint = getCost(category);
+      let totalCost = 0;
+
+      // 健康值特殊处理
+      if (category === 'health') {
+        // 健康值每次提升1-5点
+        const points = Math.min(5, Math.max(1, Math.floor(amount / costPerPoint)));
+        state.health = Math.min(100, state.health + points);
+        totalCost = points * costPerPoint;
+        gained = points;
+      } else {
+        // 其他属性正常提升
+        while (amount >= costPerPoint && state[category] < 10000) {
+          state[category]++;
+          amount -= costPerPoint;
+          totalCost += costPerPoint;
+          costPerPoint = getCost(category);
+          gained++;
+        }
+      }
+
+      state.gold -= totalCost;
+
+      // 副作用处理
+      if (enableNegative && gained > 0) {
+        const keys = ['strength', 'agility', 'intelligence', 'charisma', 'willpower', 'health'];
+        const opposite = keys.filter(k => k !== category);
+        if (Math.random() < 0.3) {
+          let randomAttr = opposite[Math.floor(Math.random() * opposite.length)];
+          if (randomAttr === 'health') {
+            // 健康值减少1-5点
+            const decrease = Math.floor(Math.random() * 5) + 1;
+            state.health = Math.max(0, state.health - decrease);
+          } else if (state[randomAttr] > 0) {
+            state[randomAttr]--;
+          }
+        }
+      }
+
+      save();
+      document.getElementById('amount').value = '';
+      alert(`成功提升 ${gained} 点${getAttributeName(category)}！消耗 ${totalCost} 金币`);
+    });
+
+    // 记录收入按钮事件
+    document.getElementById('addIncomeBtn').addEventListener('click', function() {
+      let amount = parseFloat(document.getElementById('incomeAmount').value);
+      
+      if (!amount || amount <= 0) {
+        alert('请输入有效的金额');
+        return;
+      }
+
+      state.gold += amount;
+      save();
+      document.getElementById('incomeAmount').value = '';
+      alert(`成功增加 ${amount} 金币！`);
+    });
+
+    // 获取属性中文名称
+    function getAttributeName(attr) {
+      const names = {
+        strength: '力量',
+        agility: '敏捷',
+        intelligence: '智力',
+        charisma: '魅力',
+        willpower: '毅力',
+        health: '健康'
+      };
+      return names[attr] || attr;
+    }
+
+    // 设定数值按钮事件
+    document.getElementById('setAttrBtn').addEventListener('click', function() {
+      const attr = document.getElementById('attrSelect').value;
+      const val = parseInt(document.getElementById('newValue').value);
+      
+      if (!isNaN(val) && val >= 0) {
+        // 健康值特殊处理
+        if (attr === 'health') {
+          state.health = Math.min(100, val);
+        } else {
+          state[attr] = val;
+        }
+        save();
+        document.getElementById('newValue').value = '';
+        alert(`${getAttributeName(attr)}已设置为 ${state[attr]}`);
+      } else {
+        alert('请输入有效的正整数');
+      }
+    });
+
+    // Tab切换功能
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        
+        this.classList.add('active');
+        const pageId = this.getAttribute('data-page');
+        document.getElementById(pageId).classList.add('active');
+      });
+    });
+
+    // 初始化显示
+    updateDisplay();
+  </script>
+</body>
+</html>
