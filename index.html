@@ -290,7 +290,7 @@
           <option value="intelligence">书籍/课程</option>
           <option value="charisma">社交活动</option>
           <option value="health">美食饮品</option>
-          <option value="luxury">奢侈消费</option>
+          <option value="luxury">奢侈消费（兴趣爱好 美容保养）</option>
           <option value="daily">日常开销</option>
         </select>
         
@@ -337,7 +337,7 @@
         
         <button id="setAttrBtn">设定数值</button>
 
-	<div class="version-text">Version: 1.5.2.4</div>
+	<div class="version-text">Version: 1.5.2.5</div>
       </div>
     </div>
   </div>
@@ -613,7 +613,7 @@
             }
             break;
 
-          case 'luxury': // 奢侈消费
+          case 'luxury': // 奢侈消费（兴趣爱好 美容保养）
             if (checkEffectTrigger(0.7)) {
               effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
               effectMessage = handleAttributeChange('greed', 'increase', effectMessage);
@@ -684,7 +684,7 @@
             }
             break;
 
-          case 'luxury': // 奢侈消费
+          case 'luxury': // 奢侈消费（兴趣爱好 美容保养）
             if (checkEffectTrigger(0.7)) {
               effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
             }
