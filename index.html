@@ -75,7 +75,7 @@
       margin-bottom: 12px;
     }
     .attr-name {
-      width: 60px;
+      width: 70px;
       font-weight: bold;
       margin-right: 10px;
     }
@@ -305,6 +305,93 @@
       </div>
     </div>
     
+    <!-- 冒险页 -->
+    <div id="adventurePage" class="page">
+      <div class="section">
+        <div class="avatar-container">
+          <div class="avatar" id="adventureAvatar">
+            <img id="adventureAvatarImage" src="" alt="冒险头像">
+          </div>
+        </div>
+        
+        <div class="attr-grid">
+          <div class="attr-row">
+            <span class="attr-name">生命值:</span>
+            <span class="attr-value" id="hp">200</span>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">嘲讽值:</span>
+            <span class="attr-value" id="taunt">100</span>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">谋略值:</span>
+            <span class="attr-value" id="strategy">50</span>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">闪避率:</span>
+            <span class="attr-value" id="dodge">5%</span>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">暴击率:</span>
+            <span class="attr-value" id="criticalRate">15%</span>
+          </div>
+        
+          <div class="attr-row">
+            <span class="attr-name">暴击伤害:</span>
+            <span class="attr-value" id="criticalDamage">150%</span>
+          </div>
+        </div>
+        
+        <button id="startAdventureBtn" style="margin-top: 20px;">开启历练</button>
+
+        <div class="section" style="margin-top: 20px;">
+          <h3>技能</h3>
+          <div class="skill-grid">
+            <div class="skill-slot">
+              <span>[无技能]</span>
+              <button class="small-btn">更换</button>
+            </div>
+            <div class="skill-slot">
+              <span>[无技能]</span>
+              <button class="small-btn">更换</button>
+            </div>
+            <div class="skill-slot">
+              <span>[无技能]</span>
+              <button class="small-btn">更换</button>
+            </div>
+            <div class="skill-slot">
+              <span>[无技能]</span>
+              <button class="small-btn">更换</button>
+            </div>
+          </div>
+          
+          <h3>饰品</h3>
+          <div class="accessory-grid">
+            <div class="accessory-slot">
+              <span>[无饰品]</span>
+              <button class="small-btn">更换</button>
+            </div>
+            <div class="accessory-slot">
+              <span>[无饰品]</span>
+              <button class="small-btn">更换</button>
+            </div>
+            <div class="accessory-slot">
+              <span>[无饰品]</span>
+              <button class="small-btn">更换</button>
+            </div>
+            <div class="accessory-slot">
+              <span>[无饰品]</span>
+              <button class="small-btn">更换</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <!-- 设置页 -->
     <div id="settingsPage" class="page">
       <div class="section">
@@ -337,7 +424,7 @@
         
         <button id="setAttrBtn">设定数值</button>
 
-	<div class="version-text">Version: 1.5.2.5</div>
+	<div class="version-text">Version: 1.6.1.5</div>
       </div>
     </div>
   </div>
@@ -346,6 +433,7 @@
   <div class="tab-bar">
     <div class="tab active" data-page="attributesPage">角色属性</div>
     <div class="tab" data-page="expensePage">记录收支</div>
+    <div class="tab" data-page="adventurePage">历练（开发中）</div>
     <div class="tab" data-page="settingsPage">设置</div>
   </div>
   
@@ -368,6 +456,7 @@
     // 加载保存的头像
     if (state.avatar) {
       document.getElementById('avatarImage').src = state.avatar;
+      document.getElementById('adventureAvatarImage').src = state.avatar;
     }
 
     // 保存状态到本地存储
@@ -375,6 +464,13 @@
       // 确保健康值不超过100
       state.health = Math.min(100, state.health);
       localStorage.setItem('charState', JSON.stringify(state));
+
+      // 同步头像到冒险页面
+      if (state.avatar) {
+        document.getElementById('adventureAvatarImage').src = state.avatar;
+      }
+
+
       updateDisplay();
     }
 
@@ -452,6 +548,38 @@
         }
       }
       
+      // 计算冒险属性
+      const D9 = Number(state.strength) || 0;   // 力量
+      const D10 = Number(state.intelligence) || 0; // 智力
+      const D11 = Number(state.agility) || 0;   // 敏捷
+      const D12 = Number(state.charisma) || 0;  // 魅力
+      const D13 = Math.min(Number(state.gluttony) || 0, 100);  // 暴食
+       const D14 = Math.min(Number(state.greed) || 0, 100);     // 贪婪
+
+      // 计算生命值
+      const hp = Math.round((80 + (D9 * 0.8) + (D10 * 0.3) + (D11 * 0.1)) * (1 - (D13 / 100) * 0.90));
+      document.getElementById('hp').textContent = isNaN(hp) ? 0 : Math.max(0, hp); // 确保不小于0
+
+      // 计算谋略值
+      const strategy = Math.round((20 + (D10 * 0.1) + (D11 * 0.1) + (D12 * 0.1)) * (1 - (D14 / 100) * 0.9));
+      document.getElementById('strategy').textContent = Math.max(0, strategy);
+
+      // 计算嘲讽值
+      const taunt = Math.round(40 + (D9 * 0.1) + (D10 * 0.3) + (D12 * 0.2));
+      document.getElementById('taunt').textContent = Math.max(0, taunt);
+
+      // 计算闪避率
+      const dodge = 0.0455 + (D11 * 0.000055);
+      document.getElementById('dodge').textContent = Math.min(100, (dodge * 100).toFixed(0)) + '%'; // 不超过100%
+
+      // 计算暴击率
+      const criticalRate = 0.14 + (D10 * 0.000086);
+      document.getElementById('criticalRate').textContent = Math.min(100, (criticalRate * 100).toFixed(0)) + '%';
+
+      // 计算暴击伤害
+      const criticalDamage = 1.4 + (D12 * 0.001);
+      document.getElementById('criticalDamage').textContent = Math.round(criticalDamage * 100) + '%';
+
       // 更新进度条和难度UI
       updateProgressBars();
       updateDifficultyUI();
@@ -474,13 +602,17 @@
     function handleAttributeChange(attr, effectType, effectMessage) {
       if (effectType === 'increase') {
         const increaseValue = getIncreaseValue(state[attr]);
-        state[attr] += increaseValue;
-        effectMessage += `↑ ${getAttributeName(attr)} +${increaseValue}\n`;
+        if (increaseValue > 0) { // 只有增加值>0时才显示
+          state[attr] += increaseValue;
+          effectMessage += `↑ ${getAttributeName(attr)} +${increaseValue}\n`;
+        }
       } else if (effectType === 'decrease') {
         const decreaseValue = getDecreaseValue();
         const actualDecrease = Math.min(decreaseValue, state[attr]);
-        state[attr] -= actualDecrease;
-        effectMessage += `↓ ${getAttributeName(attr)} -${actualDecrease}\n`;
+        if (actualDecrease > 0) { // 只有减少值>0时才显示
+          state[attr] -= actualDecrease;
+          effectMessage += `↓ ${getAttributeName(attr)} -${actualDecrease}\n`;
+        }
       }
       return effectMessage;
     }
@@ -507,6 +639,7 @@
         reader.onload = function(event) {
           state.avatar = event.target.result;
           document.getElementById('avatarImage').src = event.target.result;
+          document.getElementById('adventureAvatarImage').src = event.target.result;
           save();
         };
         reader.readAsDataURL(file);
@@ -613,7 +746,7 @@
             }
             break;
 
-          case 'luxury': // 奢侈消费（兴趣爱好 美容保养）
+          case 'luxury': // 奢侈消费（兴趣 爱好 美容 保养）
             if (checkEffectTrigger(0.7)) {
               effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
               effectMessage = handleAttributeChange('greed', 'increase', effectMessage);
@@ -684,7 +817,7 @@
             }
             break;
 
-          case 'luxury': // 奢侈消费（兴趣爱好 美容保养）
+          case 'luxury': // 奢侈消费（兴趣 爱好 美容 保养）
             if (checkEffectTrigger(0.7)) {
               effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
             }
