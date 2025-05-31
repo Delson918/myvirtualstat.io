@@ -3,6 +3,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>主角养成器</title>
+  <!-- 引入Chart.js库用于绘制饼图 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       background: #0a0a0a;
@@ -206,6 +208,89 @@
       color: #666;
       z-index: 100;
     }
+    /* 新增内联统计区域的样式 */
+    .stats-container {
+      margin-top: 20px;
+      border-top: 1px solid #444;
+      padding-top: 15px;
+      background: #1e1e1e;
+      border-radius: 8px;
+    }
+    .stats-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .stats-title {
+      color: #7fffd4;
+      font-size: 18px;
+      margin-right: 10px;
+      width: 80px;
+    }
+    .hide-stats {
+      background: #f44336;
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+    .stats-content {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .chart-container {
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      min-height: 300px; 
+    }
+    @media (max-width: 600px) {
+      .stats-content {
+        flex-direction: column;
+      }
+      .expense-stat-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+  
+      .expense-stat-value {
+        margin-top: 5px;
+      }
+    }
+    .expense-stat-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding: 5px;
+      background: #2c2c2c;
+      border-radius: 4px;
+    }
+    .expense-stat-label {
+      font-weight: bold;
+    }
+    .expense-stat-value {
+      font-family: 'Courier New', monospace;
+    }
+    /* 确保统计列表可滚动 */
+    .expense-stats {
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+
+    /* 滚动条样式 */
+    .expense-stats::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .expense-stats::-webkit-scrollbar-thumb {
+      background: #4caf50;
+      border-radius: 3px;
+    }
+
+    .expense-stats::-webkit-scrollbar-track {
+      background: #2c2c2c;
+    }
   </style>
 </head>
 <body>
@@ -397,7 +482,7 @@
       <div class="section">
         <h2>设置</h2>
         
-         <div class="checkbox-container">
+        <div class="checkbox-container">
           <input type="checkbox" id="enableNegative" />
           <label for="enableNegative">副作用模式 (有几率降低属性)</label>
         </div>
@@ -415,19 +500,38 @@
           <option value="intelligence">智力</option>
           <option value="charisma">魅力</option>
           <option value="health">健康</option>
-          <option value="gold">金币</option>
           <option value="gluttony" class="hidden">暴食</option>
           <option value="greed" class="hidden">贪婪</option>
+          <option value="gold">金币</option>
         </select>
         
         <input type="number" id="newValue" placeholder="输入新数值" min="0" />
         
         <button id="setAttrBtn">设定数值</button>
 
-	<div class="version-text">Version: 1.6.1.5</div>
-      </div>
+        <!-- 修改为直接显示在页面上的统计区域 -->
+        <div class="stats-container" id="statsContainer" style="display: none;">
+          <div class="stats-header">
+            <h3 class="stats-title">消费统计</h3>
+          </div>
+          <div class="stats-content">
+            <div class="chart-container">
+              <canvas id="expenseChart"></canvas>
+            </div>
+            <div class="expense-stats">
+              <h4>消费类别分布</h4>
+              <div id="expenseStatsList"></div>
+            </div>
+          </div>
+        </div>
+
+      <!-- 切换显示/隐藏统计 -->
+      <button id="showExpenseStatsBtn" style="margin-top: 20px; margin-bottom: 50px; background: #2196F3;">显示消费统计</button>
+
+      <div class="version-text">Version: 1.6.2.9</div>
     </div>
   </div>
+
   
   <!-- 底部导航栏 -->
   <div class="tab-bar">
@@ -450,7 +554,18 @@
       greed: 0,
       avatar: '',
       enableNegative: false,
-      enableNegativeStates: false
+      enableNegativeStates: false,
+      expenseRecords: [] // 新增的消费记录数组
+    };
+
+    // 消费类别映射
+    const categoryNames = {
+      strength: '健身/运动',
+      intelligence: '书籍/课程',
+      charisma: '社交活动',
+      health: '美食饮品',
+      luxury: '奢侈消费',
+      daily: '日常开销'
     };
 
     // 加载保存的头像
@@ -469,7 +584,6 @@
       if (state.avatar) {
         document.getElementById('adventureAvatarImage').src = state.avatar;
       }
-
 
       updateDisplay();
     }
@@ -664,6 +778,23 @@
 
       // 先扣除金币
       state.gold -= amount;
+
+      // 记录消费
+      if (!state.expenseRecords) {
+        state.expenseRecords = [];
+      }
+      
+      // 添加新记录到数组开头
+      state.expenseRecords.unshift({
+        amount: amount,
+        category: category,
+        timestamp: new Date().toISOString()
+      });
+      
+      // 只保留最近100条记录
+      if (state.expenseRecords.length > 100) {
+        state.expenseRecords = state.expenseRecords.slice(0, 100);
+      }
 
       // 负面状态模式效果 - 仅对特定消费类型增加暴食和贪婪
       if (state.enableNegativeStates && ['health', 'luxury'].includes(category)) {
@@ -889,7 +1020,7 @@
       });
     });
 
-    // 新增的复选框事件监听
+    // 复选框事件监听
     document.getElementById('enableNegative').addEventListener('change', function() {
       state.enableNegative = this.checked;
       save();
@@ -903,6 +1034,120 @@
       }
       save();
     });
+    
+    // 修改按钮事件 - 切换显示/隐藏
+    document.getElementById('showExpenseStatsBtn').addEventListener('click', function() {
+      const statsContainer = document.getElementById('statsContainer');
+      if (statsContainer.style.display === 'none' || statsContainer.style.display === '') {
+        showExpenseStats();
+      } else {
+        hideStats();
+      }
+    });
+
+    // 显示消费统计showExpenseStats函数
+    function showExpenseStats() {
+      // 确保state.expenseRecords存在且是最新的
+      if (!Array.isArray(state.expenseRecords)) {
+        state.expenseRecords = [];
+        save(); 
+      }
+
+      // 检查是否有记录
+      const validRecords = state.expenseRecords.filter(record => 
+        record && 
+        typeof record.amount === 'number' && 
+        record.amount > 0 &&
+        record.category && 
+        categoryNames[record.category]
+      );
+
+      if (validRecords.length === 0) {
+        alert('暂无消费记录');
+        return;
+      }
+
+      // 强制显示统计区域（无论当前状态如何）
+      const statsContainer = document.getElementById('statsContainer');
+      statsContainer.style.display = 'block';
+      document.getElementById('showExpenseStatsBtn').textContent = '隐藏消费统计';
+
+      // 计算各类别的总金额和百分比
+      const categoryStats = {};
+      let totalAmount = 0;
+  
+      // 只分析最近100条记录
+      const recentRecords = state.expenseRecords.slice(0, 100);
+  
+      validRecords.forEach(record => {
+        if (!categoryStats[record.category]) {
+          categoryStats[record.category] = { amount: 0, count: 0 };
+        }
+        categoryStats[record.category].amount += record.amount;
+        categoryStats[record.category].count++;
+        totalAmount += record.amount;
+      });
+
+      // 准备图表数据
+      const labels = Object.keys(categoryStats).map(cat => categoryNames[cat]);
+      const data = Object.values(categoryStats).map(stat => stat.amount);
+  
+      // 销毁旧图表（安全方式）
+      const chartCanvas = document.getElementById('expenseChart');
+      if (window.expenseChart instanceof Chart) {
+        window.expenseChart.destroy();
+      }
+
+      // 创建新图表
+      window.expenseChart = new Chart(chartCanvas.getContext('2d'), {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.7)',
+              'rgba(54, 162, 235, 0.7)',
+              'rgba(255, 206, 86, 0.7)',
+              'rgba(75, 192, 192, 0.7)',
+              'rgba(153, 102, 255, 0.7)',
+              'rgba(255, 159, 64, 0.7)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { color: '#e0e0e0' }
+            }
+          }
+        }
+      });
+
+      // 更新统计列表
+      const statsList = document.getElementById('expenseStatsList');
+      statsList.innerHTML = '';
+
+      for (const [category, stat] of Object.entries(categoryStats)) {
+        const percentage = (stat.amount / totalAmount * 100).toFixed(1);
+        const item = document.createElement('div');
+        item.className = 'expense-stat-item';
+        item.innerHTML = `
+          <span class="expense-stat-label">${categoryNames[category]}</span>
+          <span class="expense-stat-value">${stat.amount} 金币 (${percentage}%)</span>
+        `;
+        statsList.appendChild(item);
+      }
+    }
+
+    // 隐藏统计区域
+    function hideStats() {
+      document.getElementById('statsContainer').style.display = 'none';
+      document.getElementById('showExpenseStatsBtn').textContent = '显示消费统计';
+    }
 
     // 初始化显示
     updateDisplay();
