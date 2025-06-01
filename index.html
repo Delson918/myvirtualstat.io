@@ -671,11 +671,11 @@
        const D14 = Math.min(Number(state.greed) || 0, 100);     // 贪婪
 
       // 计算生命值
-      const hp = Math.round((80 + (D9 * 0.8) + (D10 * 0.3) + (D11 * 0.1)) * (1 - (D13 / 100) * 0.90));
+      const hp = Math.round((80 + (D9 * 0.8) + (D10 * 0.3) + (D11 * 0.1)) * (1 - (D13 / 100) * 0.80));
       document.getElementById('hp').textContent = isNaN(hp) ? 0 : Math.max(0, hp); // 确保不小于0
 
       // 计算谋略值
-      const strategy = Math.round((20 + (D10 * 0.1) + (D11 * 0.1) + (D12 * 0.1)) * (1 - (D14 / 100) * 0.9));
+      const strategy = Math.round((20 + (D10 * 0.1) + (D11 * 0.1) + (D12 * 0.1)) * (1 - (D14 / 100) * 0.80));
       document.getElementById('strategy').textContent = Math.max(0, strategy);
 
       // 计算嘲讽值
