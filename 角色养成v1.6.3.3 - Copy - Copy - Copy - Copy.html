@@ -660,7 +660,7 @@
       <!-- 切换显示/隐藏统计 -->
       <button id="showExpenseStatsBtn" style="margin-top: 20px; margin-bottom: 50px; background: #2196F3;">显示消费统计</button>
 
-      <div class="version-text">Version: 1.6.3.3</div>
+      <div class="version-text">Version: 1.6.3.4</div>
     </div>
   </div>
 
@@ -1367,29 +1367,20 @@
             // 更新装备状态
             equippedItems[category][slotIndex] = currentSelectedItem.id;
             save(); 
-            }
           
             // 更新UI显示
             const slotElement = document.getElementById(`${category}Slot${parseInt(slotIndex) + 1}`);
             if (slotElement) {
-              const itemId = currentSelectedItem ? currentSelectedItem.id : equippedItems[category][slotIndex];
-              const itemData = itemDatabase[category].find(item => item.id === itemId);
-
-              if (itemData) {
-                slotElement.textContent = itemData.name;
-                slotElement.className = `rarity-${itemData.rarity || 'common'}`;
-              } else {
-                console.error('找不到物品数据:', itemId);
-                slotElement.textContent = '[无物品]';
-                slotElement.className = 'rarity-common';
-	      }
-            }
+              slotElement.textContent = currentSelectedItem.name;
+              slotElement.className = `rarity-${currentSelectedItem.rarity || 'common'}`;
+	    }
           }
+        }
 
-          // 重置选中状态
-          currentSelectedItem = null;
-          overlay.style.display = 'none';
-        });
+        // 重置选中状态
+        currentSelectedItem = null;
+        overlay.style.display = 'none';
+      });
 
       // 为所有"更换"按钮添加事件
       document.querySelectorAll('.skill-slot button, .accessory-slot button').forEach((btn, index) => {
@@ -1481,9 +1472,14 @@
         const slotElement = document.getElementById(`skillSlot${index+1}`);
         const itemData = itemDatabase.skills.find(item => item.id === skillId);
       
-        if (slotElement && itemData) {
-          slotElement.textContent = itemData.name;
-          slotElement.className = `rarity-${itemData.rarity}`;
+        if (slotElement) {
+          if (itemData) {
+            slotElement.textContent = itemData.name;
+            slotElement.className = `rarity-${itemData.rarity || 'common'}`;
+          } else {
+            slotElement.textContent = isSkill ? '[无技能]' : '[无饰品]';
+            slotElement.className = 'rarity-common';
+          }
         }
       });
     
