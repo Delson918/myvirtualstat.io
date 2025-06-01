@@ -1362,18 +1362,10 @@
         const category = overlay.dataset.category;
 
         if (slotIndex !== undefined && category) {
-          // 如果有选中物品则使用选中物品，否则保持原样（不重置为默认）
           if (currentSelectedItem) {
-            // 更新装备状态
             equippedItems[category][slotIndex] = currentSelectedItem.id;
             save(); 
-          
-            // 更新UI显示
-            const slotElement = document.getElementById(`${category}Slot${parseInt(slotIndex) + 1}`);
-            if (slotElement) {
-              slotElement.textContent = currentSelectedItem.name;
-              slotElement.className = `rarity-${currentSelectedItem.rarity || 'common'}`;
-	    }
+            initEquippedItemsDisplay();
           }
         }
 
@@ -1488,9 +1480,14 @@
         const slotElement = document.getElementById(`accessorySlot${index+1}`);
         const itemData = itemDatabase.accessories.find(item => item.id === accId);
       
-        if (slotElement && itemData) {
-          slotElement.textContent = itemData.name;
-          slotElement.className = `rarity-${itemData.rarity}`;
+        if (slotElement) {
+          if (itemData) {
+            slotElement.textContent = itemData.name;
+            slotElement.className = `rarity-${itemData.rarity || 'common'}`;
+          } else {
+            slotElement.textContent = '[无饰品]';
+            slotElement.className = 'rarity-common';
+          }
         }
       });
     }
