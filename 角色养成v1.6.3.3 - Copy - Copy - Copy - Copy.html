@@ -1,0 +1,1508 @@
+<!DOCTYPE html><html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>主角养成器</title>
+  <!-- 引入Chart.js库用于绘制饼图 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    h1 {
+      color: #7fffd4;
+      text-align: center;
+      padding: 15px 0;
+      margin: 0;
+      background: #1a1a1a;
+    }
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+    }
+    .section {
+      background: #1e1e1e;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px #444;
+    }
+    label, input, select, button {
+      font-size: 16px;
+      margin: 5px 0;
+    }
+    input, select {
+      padding: 8px;
+      background: #2c2c2c;
+      border: none;
+      color: #fff;
+      border-radius: 6px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      background: #4caf50;
+      border: none;
+      padding: 10px 16px;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: #45a049;
+      transform: translateY(-2px);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .attr-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .attr-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .attr-name {
+      width: 70px;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .attr-value {
+      width: 20px;
+      text-align: left;
+      font-family: 'Courier New', monospace;
+      margin-right: 10px;
+    }
+    .tab-bar {
+      display: flex;
+      background: #1a1a1a;
+      border-top: 1px solid #333;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 16px 0;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+    .tab:hover {
+      background: #2a2a2a;
+    }
+    .tab.active {
+      background: #333;
+      color: #7fffd4;
+      font-weight: bold;
+    }
+    .page {
+      display: none;
+      animation: fadeIn 0.3s ease-out;
+    }
+    .page.active {
+      display: block;
+    }
+    .avatar-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 25px;
+    }
+    .avatar {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background-color: #2c2c2c;
+      border: 3px solid #7fffd4;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 0 15px rgba(127, 255, 212, 0.3);
+    }
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .avatar-upload {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: rgba(0,0,0,0.7);
+      text-align: center;
+      padding: 8px 0;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    .avatar-upload:hover {
+      background: rgba(0,0,0,0.9);
+    }
+    .avatar-upload input {
+      display: none;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .progress-container {
+      flex: 1;
+      background-color: #2c2c2c;
+      border-radius: 5px;
+      height: 20px;
+    }
+    .progress-bar {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.5s ease-out;
+    }
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      margin: 10px 0;
+    }
+    .checkbox-container input {
+      width: auto;
+      margin-right: 10px;
+    }
+    .income-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #444;
+    }
+    .tab-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    .difficulty-description {
+      font-size: 12px;
+      color: #888;
+      margin-top: 5px;
+    }
+    .hidden {
+      display: none;
+    }
+    .version-text {
+      position: fixed;
+      bottom: 60px;
+      right: 15px;
+      font-size: 12px;
+      color: #666;
+      z-index: 100;
+    }
+    /* 新增内联统计区域的样式 */
+    .stats-container {
+      margin-top: 20px;
+      border-top: 1px solid #444;
+      padding-top: 15px;
+      background: #1e1e1e;
+      border-radius: 8px;
+    }
+    .stats-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .stats-title {
+      color: #7fffd4;
+      font-size: 18px;
+      margin-right: 10px;
+      width: 80px;
+    }
+    .hide-stats {
+      background: #f44336;
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+    .stats-content {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .chart-container {
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      min-height: 300px; 
+    }
+    @media (max-width: 600px) {
+      .stats-content {
+        flex-direction: column;
+      }
+      .expense-stat-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+  
+      .expense-stat-value {
+        margin-top: 5px;
+      }
+    }
+    .expense-stat-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding: 5px;
+      background: #2c2c2c;
+      border-radius: 4px;
+    }
+    .expense-stat-label {
+      font-weight: bold;
+    }
+    .expense-stat-value {
+      font-family: 'Courier New', monospace;
+    }
+    /* 确保统计列表可滚动 */
+    .expense-stats {
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+
+    /* 滚动条样式 */
+    .expense-stats::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .expense-stats::-webkit-scrollbar-thumb {
+      background: #4caf50;
+      border-radius: 3px;
+    }
+
+    .expense-stats::-webkit-scrollbar-track {
+      background: #2c2c2c;
+    }
+
+    /* 技能和饰品样式 */
+    .skill-grid, .accessory-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .skill-slot, .accessory-slot {
+      background: #2c2c2c;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .small-btn {
+      width: auto;
+      padding: 5px 10px;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    
+    /* 存储UI样式 */
+    .storage-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .storage-container {
+      background: #1e1e1e;
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      border-radius: 12px;
+      padding: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .storage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .storage-title {
+      color: #7fffd4;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .close-storage {
+      background: #f44336;
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      width: max-content;
+    }
+    .storage-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+    .item-info {
+      background: #2c2c2c;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    .item-name {
+      color: #7fffd4;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .item-description {
+      color: #ccc;
+      font-size: 14px;
+    }
+    .item-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .item-icon {
+      width: 80px;
+      height: 80px;
+      background: #333;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .item-icon:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(127, 255, 212, 0.5);
+    }
+    .item-icon img {
+      max-width: 70px;
+      max-height: 70px;
+    }
+    .adventure-points {
+      text-align: left;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    
+    /* 新增稀有度颜色样式 */
+    .rarity-common {
+      color: #e0e0e0; /* 灰白色 - 普通 */
+    }
+    .rarity-uncommon {
+      color: #4caf50; /* 绿色 - 稀有 */
+    }
+    .rarity-rare {
+      color: #2196F3; /* 蓝色 - 罕见 */
+    }
+    .rarity-epic {
+      color: #9c27b0; /* 紫色 - 史诗 */
+    }
+    .rarity-legendary {
+      color: #ffeb3b; /* 黄色 - 传奇 */
+    }  
+  </style>
+</head>
+<body>
+  <h1>主角养成器</h1>
+  
+  <div class="content">
+    <!-- 角色属性页 -->
+    <div id="attributesPage" class="page active">
+      <div class="section">
+        <h2>角色属性</h2>
+        <div class="avatar-container">
+          <div class="avatar" id="avatarDisplay">
+            <img id="avatarImage" src="" alt="头像">
+            <label class="avatar-upload">
+              上传头像
+              <input type="file" id="avatarInput" accept="image/*">
+            </label>
+          </div>
+        </div>
+        
+        <div class="attr-grid">
+          <div class="attr-row">
+            <span class="attr-name">力量:</span>
+            <span class="attr-value" id="strength">100</span>
+            <div class="progress-container"><div class="progress-bar" id="strengthBar" style="width: 1%"></div></div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">敏捷:</span>
+            <span class="attr-value" id="agility">100</span>
+            <div class="progress-container"><div class="progress-bar" id="agilityBar" style="width: 1%"></div></div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">智力:</span>
+            <span class="attr-value" id="intelligence">100</span>
+            <div class="progress-container"><div class="progress-bar" id="intelligenceBar" style="width: 1%"></div></div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">魅力:</span>
+            <span class="attr-value" id="charisma">100</span>
+            <div class="progress-container"><div class="progress-bar" id="charismaBar" style="width: 1%"></div></div>
+          </div>
+          
+          <div class="attr-row hidden" id="gluttonyRow">
+            <span class="attr-name">暴食:</span>
+            <span class="attr-value" id="gluttony">0</span>
+            <div class="progress-container"><div class="progress-bar" id="gluttonyBar" style="width: 0%"></div></div>
+          </div>
+          
+          <div class="attr-row hidden" id="greedRow">
+            <span class="attr-name">贪婪:</span>
+            <span class="attr-value" id="greed">0</span>
+            <div class="progress-container"><div class="progress-bar" id="greedBar" style="width: 0%"></div></div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">健康:</span>
+            <span class="attr-value" id="health">100</span>
+            <div class="progress-container"><div class="progress-bar" id="healthBar" style="width: 100%"></div></div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">金币:</span>
+            <span class="attr-value" id="gold">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 记录消费页 -->
+    <div id="expensePage" class="page">
+      <div class="section">
+        <h2>记录消费</h2>
+        <label class="tab-label">消费金额 (MYR):</label>
+        <input type="number" id="amount" placeholder="输入消费金额" min="1" />
+        
+        <label class="tab-label">用途:</label>
+        <select id="category">
+          <option value="strength">健身/运动</option>
+          <option value="intelligence">书籍/课程</option>
+          <option value="charisma">社交活动</option>
+          <option value="health">美食饮品</option>
+          <option value="luxury">奢侈消费（兴趣爱好 美容保养）</option>
+          <option value="daily">日常开销</option>
+        </select>
+        
+        <button id="addExpenseBtn">记录消费</button>
+        
+        <div class="income-section">
+          <h3>记录收入</h3>
+          <label class="tab-label">收入金额 (MYR):</label>
+          <input type="number" id="incomeAmount" placeholder="输入收入金额" min="1" />
+          <button id="addIncomeBtn">记录收入</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 历练页 -->
+    <div id="adventurePage" class="page">
+      <div class="section">
+        <div class="avatar-container">
+          <div class="avatar" id="adventureAvatar">
+            <img id="adventureAvatarImage" src="" alt="冒险头像">
+          </div>
+        </div>
+        
+        <div class="attr-grid">
+          <div class="attr-row">
+            <span class="attr-name">生命值:</span>
+            <span class="attr-value" id="hp">200</span>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">嘲讽值:</span>
+            <span class="attr-value" id="taunt">100</span>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">谋略值:</span>
+            <span class="attr-value" id="strategy">50</span>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">闪避率:</span>
+            <span class="attr-value" id="dodge">5%</span>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">暴击率:</span>
+            <span class="attr-value" id="criticalRate">15%</span>
+          </div>
+        
+          <div class="attr-row">
+            <span class="attr-name">暴击伤害:</span>
+            <span class="attr-value" id="criticalDamage">150%</span>
+          </div>
+        </div>
+        
+        <button id="startAdventureBtn" style="margin-top: 20px;">开启历练</button>
+
+        <div class="section" style="margin-top: 20px;">
+          <h3>技能</h3>
+          <div class="skill-grid">
+            <div class="skill-slot">
+              <span class="rarity-common" id="skillSlot1">[无技能]</span>
+              <button class="small-btn">更换</button>
+            </div>
+            <div class="skill-slot">
+              <span class="rarity-common" id="skillSlot2">[无技能]</span>
+              <button class="small-btn">更换</button>
+            </div>
+            <div class="skill-slot">
+              <span class="rarity-common" id="skillSlot3">[无技能]</span>
+              <button class="small-btn">更换</button>
+            </div>
+            <div class="skill-slot">
+              <span class="rarity-common" id="skillSlot4">[无技能]</span>
+              <button class="small-btn">更换</button>
+            </div>
+          </div>
+          
+          <h3>饰品</h3>
+          <div class="accessory-grid">
+            <div class="accessory-slot">
+              <span class="rarity-common" id="accessorySlot1">[无饰品]</span>
+              <button class="small-btn">更换</button>
+            </div>
+            <div class="accessory-slot">
+              <span class="rarity-common" id="accessorySlot2">[无饰品]</span>
+              <button class="small-btn">更换</button>
+            </div>
+            <div class="accessory-slot">
+              <span class="rarity-common" id="accessorySlot3">[无饰品]</span>
+              <button class="small-btn">更换</button>
+            </div>
+            <div class="accessory-slot">
+              <span class="rarity-common" id="accessorySlot4">[无饰品]</span>
+              <button class="small-btn">更换</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 设置页 -->
+    <div id="settingsPage" class="page">
+      <div class="section">
+        <h2>设置</h2>
+        
+        <div class="checkbox-container">
+          <input type="checkbox" id="enableNegative" />
+          <label for="enableNegative">副作用模式 (有几率降低属性)</label>
+        </div>
+      
+        <div class="checkbox-container">
+          <input type="checkbox" id="enableNegativeStates" />
+          <label for="enableNegativeStates">负面状态模式 (新增暴食与贪婪)</label>
+        </div>
+        <br />
+        
+        <label>手动调整属性:</label>
+        <select id="attrSelect">
+          <option value="strength">力量</option>
+          <option value="agility">敏捷</option>
+          <option value="intelligence">智力</option>
+          <option value="charisma">魅力</option>
+          <option value="health">健康</option>
+          <option value="gluttony" class="hidden">暴食</option>
+          <option value="greed" class="hidden">贪婪</option>
+          <option value="gold">金币</option>
+        </select>
+        
+        <input type="number" id="newValue" placeholder="输入新数值" min="0" />
+        
+        <button id="setAttrBtn">设定数值</button>
+
+        <!-- 统计区域 -->
+        <div class="stats-container" id="statsContainer" style="display: none;">
+          <div class="stats-header">
+            <h3 class="stats-title">消费统计</h3>
+          </div>
+          <div class="stats-content">
+            <div class="chart-container">
+              <canvas id="expenseChart"></canvas>
+            </div>
+            <div class="expense-stats">
+              <h4>消费类别分布</h4>
+              <div id="expenseStatsList"></div>
+            </div>
+          </div>
+        </div>
+
+      <!-- 切换显示/隐藏统计 -->
+      <button id="showExpenseStatsBtn" style="margin-top: 20px; margin-bottom: 50px; background: #2196F3;">显示消费统计</button>
+
+      <div class="version-text">Version: 1.6.3.3</div>
+    </div>
+  </div>
+
+  <!-- 存储UI -->
+  <div class="storage-overlay" id="storageOverlay">
+    <div class="storage-container">
+      <div class="storage-header">
+        <div class="storage-title" id="storageTitle">技能</div>
+        <button class="close-storage" id="closeStorage">关闭</button>
+      </div>
+      <div class="adventure-points">历练点: <span id="adventurePoints">0</span></div>
+      <div class="storage-content">
+        <div class="item-info">
+          <div class="item-name" id="itemNameHolder">未选择</div>
+          <div class="item-description" id="itemDescriptionHolder">请选择一个物品查看详情</div>
+        </div>
+        <div class="item-grid" id="itemGrid">
+          <!-- 这里会动态填充物品图标 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航栏 -->
+  <div class="tab-bar">
+    <div class="tab active" data-page="attributesPage">角色属性</div>
+    <div class="tab" data-page="expensePage">记录收支</div>
+    <div class="tab" data-page="adventurePage">历练</div>
+    <div class="tab" data-page="settingsPage">设置</div>
+  </div>
+  
+  <script>
+    // 初始状态
+    const state = JSON.parse(localStorage.getItem('charState')) || {
+      strength: 100,
+      agility: 100,
+      intelligence: 100,
+      charisma: 100,
+      health: 100,
+      gold: 0,
+      gluttony: 0,
+      greed: 0,
+      avatar: '',
+      enableNegative: false,
+      enableNegativeStates: false,
+      expenseRecords: [], 
+      equippedItems: {
+        skills: ['skill_0', 'skill_0', 'skill_0', 'skill_0'],
+        accessories: ['acc_0', 'acc_0', 'acc_0', 'acc_0']
+      }
+    };
+
+    // 玩家装备状态
+    const equippedItems = state.equippedItems || {
+      skills: ['skill_0', 'skill_0', 'skill_0', 'skill_0'],
+      accessories: ['acc_0', 'acc_0', 'acc_0', 'acc_0']
+    };
+
+    // 消费类别映射
+    const categoryNames = {
+      strength: '健身/运动',
+      intelligence: '书籍/课程',
+      charisma: '社交活动',
+      health: '美食饮品',
+      luxury: '奢侈消费',
+      daily: '日常开销'
+    };
+
+    // 加载保存的头像
+    if (state.avatar) {
+      document.getElementById('avatarImage').src = state.avatar;
+      document.getElementById('adventureAvatarImage').src = state.avatar;
+    }
+
+    // 保存状态到本地存储
+    function save() {
+      // 确保健康值不超过100
+      state.health = Math.min(100, state.health);
+      localStorage.setItem('charState', JSON.stringify(state));
+
+      // 保存装备状态
+      state.equippedItems = equippedItems;
+  
+      localStorage.setItem('charState', JSON.stringify(state));
+
+      // 同步头像到冒险页面
+      if (state.avatar) {
+        document.getElementById('adventureAvatarImage').src = state.avatar;
+      }
+
+      updateDisplay();
+    }
+
+    // 更新进度条
+    function updateProgressBars() {
+      const maxValues = {
+        strength: 10000,
+        agility: 10000,
+        intelligence: 10000,
+        charisma: 10000,
+        health: 100,
+        gluttony: 100, // 上限固定为100
+        greed: 100     // 上限固定为100
+      };
+      
+      const attributes = ['strength', 'agility', 'intelligence', 'charisma', 'health', 'gluttony', 'greed'];
+      
+      attributes.forEach(attr => {
+        const bar = document.getElementById(`${attr}Bar`);
+        if (bar) {
+          const percentage = (state[attr] / maxValues[attr]) * 100;
+          bar.style.width = `${percentage}%`;
+          
+          // 暴食和贪婪永远红色
+          if (attr === 'gluttony' || attr === 'greed') {
+            bar.style.background = 'linear-gradient(90deg, #ff0000, #ff3333)';
+          } else {
+            // 其他属性渐变
+            if (percentage <= 33) {
+              bar.style.background = 'linear-gradient(90deg, #ff0000, #ff8000)';
+            } else if (percentage <= 66) {
+              bar.style.background = 'linear-gradient(90deg, #ff8000, #ffcc00)';
+            } else {
+              bar.style.background = 'linear-gradient(90deg, #ffcc00, #4caf50)';
+            }
+          }
+        }
+      });
+    }
+
+    // 更新难度相关UI
+    function updateDifficultyUI() {
+      const negativeCheckbox = document.getElementById('enableNegative');
+      const negativeStatesCheckbox = document.getElementById('enableNegativeStates');
+
+      negativeCheckbox.checked = state.enableNegative;
+      negativeStatesCheckbox.checked = state.enableNegativeStates;
+
+      const gluttonyRow = document.getElementById('gluttonyRow');
+      const greedRow = document.getElementById('greedRow');
+      const gluttonyOptions = document.querySelectorAll('#attrSelect option[value="gluttony"]');
+      const greedOptions = document.querySelectorAll('#attrSelect option[value="greed"]');
+      
+      // 更新暴食和贪婪的显示
+      if (state.enableNegativeStates) {
+        gluttonyRow.classList.remove('hidden');
+        greedRow.classList.remove('hidden');
+        gluttonyOptions.forEach(opt => opt.classList.remove('hidden'));
+        greedOptions.forEach(opt => opt.classList.remove('hidden'));
+      } else {
+        gluttonyRow.classList.add('hidden');
+        greedRow.classList.add('hidden');
+        gluttonyOptions.forEach(opt => opt.classList.add('hidden'));
+        greedOptions.forEach(opt => opt.classList.add('hidden'));
+      }
+    }
+
+    // 更新显示
+    function updateDisplay() {
+      // 更新属性值
+      for (let key in state) {
+        const element = document.getElementById(key);
+        if (element) {
+          element.textContent = state[key];
+        }
+      }
+      
+      // 计算冒险属性
+      const D9 = Number(state.strength) || 0;   // 力量
+      const D10 = Number(state.intelligence) || 0; // 智力
+      const D11 = Number(state.agility) || 0;   // 敏捷
+      const D12 = Number(state.charisma) || 0;  // 魅力
+      const D13 = Math.min(Number(state.gluttony) || 0, 100);  // 暴食
+       const D14 = Math.min(Number(state.greed) || 0, 100);     // 贪婪
+
+      // 计算生命值
+      const hp = Math.round((80 + (D9 * 0.8) + (D10 * 0.3) + (D11 * 0.1)) * (1 - (D13 / 100) * 0.80));
+      document.getElementById('hp').textContent = isNaN(hp) ? 0 : Math.max(0, hp); // 确保不小于0
+
+      // 计算谋略值
+      const strategy = Math.round((20 + (D10 * 0.1) + (D11 * 0.1) + (D12 * 0.1)) * (1 - (D14 / 100) * 0.80));
+      document.getElementById('strategy').textContent = Math.max(0, strategy);
+
+      // 计算嘲讽值
+      const taunt = Math.round(40 + (D9 * 0.1) + (D10 * 0.3) + (D12 * 0.2));
+      document.getElementById('taunt').textContent = Math.max(0, taunt);
+
+      // 计算闪避率
+      const dodge = 0.0455 + (D11 * 0.000055);
+      document.getElementById('dodge').textContent = Math.min(100, (dodge * 100).toFixed(0)) + '%'; // 不超过100%
+
+      // 计算暴击率
+      const criticalRate = 0.14 + (D10 * 0.000086);
+      document.getElementById('criticalRate').textContent = Math.min(100, (criticalRate * 100).toFixed(0)) + '%';
+
+      // 计算暴击伤害
+      const criticalDamage = 1.4 + (D12 * 0.001);
+      document.getElementById('criticalDamage').textContent = Math.round(criticalDamage * 100) + '%';
+
+      // 更新进度条和难度UI
+      updateProgressBars();
+      updateDifficultyUI();
+    }
+
+    // 根据属性值获取提升浮动值
+    function getIncreaseValue(currentValue) {
+      if (currentValue <= 1000) return Math.floor(Math.random() * 5) + 1;
+      if (currentValue <= 4000) return Math.floor(Math.random() * 4) + 1;
+      if (currentValue <= 7000) return Math.floor(Math.random() * 3) + 1;
+      return Math.floor(Math.random() * 2) + 1;
+    }
+
+    // 获取下降浮动值
+    function getDecreaseValue() {
+      return Math.floor(Math.random() * 3) + 1;
+    }
+
+    // 处理属性变化
+    function handleAttributeChange(attr, effectType, effectMessage) {
+      if (effectType === 'increase') {
+        const increaseValue = getIncreaseValue(state[attr]);
+        if (increaseValue > 0) { // 只有增加值>0时才显示
+          state[attr] += increaseValue;
+          effectMessage += `↑ ${getAttributeName(attr)} +${increaseValue}\n`;
+        }
+      } else if (effectType === 'decrease') {
+        const decreaseValue = getDecreaseValue();
+        const actualDecrease = Math.min(decreaseValue, state[attr]);
+        if (actualDecrease > 0) { // 只有减少值>0时才显示
+          state[attr] -= actualDecrease;
+          effectMessage += `↓ ${getAttributeName(attr)} -${actualDecrease}\n`;
+        }
+      }
+      return effectMessage;
+    }
+
+    // 检查是否触发效果
+    function checkEffectTrigger(chance) {
+      return Math.random() < chance;
+    }
+
+    // 获取属性中文名称
+    function getAttributeName(attr) {
+      const names = {
+        strength: '力量', agility: '敏捷', intelligence: '智力',
+        charisma: '魅力', health: '健康', gluttony: '暴食', greed: '贪婪'
+      };
+      return names[attr] || attr;
+    }
+
+    // 头像上传功能
+    document.getElementById('avatarInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          state.avatar = event.target.result;
+          document.getElementById('avatarImage').src = event.target.result;
+          document.getElementById('adventureAvatarImage').src = event.target.result;
+          save();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // 记录消费按钮事件
+    document.getElementById('addExpenseBtn').addEventListener('click', function() {
+      let amount = parseFloat(document.getElementById('amount').value);
+      let category = document.getElementById('category').value;
+      let effectMessage = `消费 ${amount} 金币\n`;
+
+      if (!amount || amount <= 0) {
+        alert('请输入有效的金额');
+        return;
+      }
+
+      if (state.gold < amount) {
+        alert('金币不足！');
+        return;
+      }
+
+      // 先扣除金币
+      state.gold -= amount;
+
+      // 记录消费
+      if (!state.expenseRecords) {
+        state.expenseRecords = [];
+      }
+      
+      // 添加新记录到数组开头
+      state.expenseRecords.unshift({
+        amount: amount,
+        category: category,
+        timestamp: new Date().toISOString()
+      });
+      
+      // 只保留最近100条记录
+      if (state.expenseRecords.length > 100) {
+        state.expenseRecords = state.expenseRecords.slice(0, 100);
+      }
+
+      // 负面状态模式效果 - 仅对特定消费类型增加暴食和贪婪
+      if (state.enableNegativeStates && ['health', 'luxury'].includes(category)) {
+        const gluttonyIncrease = Math.floor(amount / 50);
+        const greedIncrease = Math.floor(amount / 100);
+        state.gluttony = Math.min(100, state.gluttony + gluttonyIncrease);
+        state.greed = Math.min(100, state.greed + greedIncrease);
+        effectMessage += `↑ 暴食 +${gluttonyIncrease}\n↑ 贪婪 +${greedIncrease}\n`;
+      }
+
+      // 副作用模式ON的处理
+      if (state.enableNegative) {
+        switch (category) {
+          case 'strength': // 健身/运动
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('strength', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('agility', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('gluttony', 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('health', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.15)) {
+              effectMessage = handleAttributeChange('intelligence', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('greed', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            break;
+
+          case 'intelligence': // 书籍/课程
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('greed', 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.35)) {
+              effectMessage = handleAttributeChange('strength', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('health', 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.15)) {
+              effectMessage = handleAttributeChange('agility', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('gluttony', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            break;
+
+          case 'charisma': // 社交活动
+            if (checkEffectTrigger(0.35)) {
+              effectMessage = handleAttributeChange('charisma', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('health', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('strength', 'decrease', effectMessage);
+            }
+            break;
+
+          case 'health': // 美食饮品
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('gluttony', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('health', 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('strength', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('agility', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.15)) {
+              effectMessage = handleAttributeChange('intelligence', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('greed', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            break;
+
+          case 'luxury': // 奢侈消费（兴趣 爱好 美容 保养）
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('greed', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('intelligence', 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('agility', 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('health', 'decrease', effectMessage);
+            }
+            if (checkEffectTrigger(0.15)) {
+              effectMessage = handleAttributeChange('gluttony', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            break;
+
+          case 'daily': // 日常开销
+            if (checkEffectTrigger(0.15)) {
+              effectMessage = handleAttributeChange('strength', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('agility', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('intelligence', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('charisma', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+              effectMessage = handleAttributeChange('health', Math.random() < 0.5 ? 'increase' : 'decrease', effectMessage);
+            }
+            break;
+        }
+      } else {
+        // 副作用模式OFF的处理
+        switch (category) {
+          case 'strength': // 健身/运动
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('strength', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('agility', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('health', 'increase', effectMessage);
+            }
+            break;
+
+          case 'intelligence': // 书籍/课程
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('strength', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('agility', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('health', 'increase', effectMessage);
+            }
+            break;
+
+          case 'charisma': // 社交活动
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+            }
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('health', 'increase', effectMessage);
+            }
+            break;
+
+          case 'health': // 美食饮品
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+            }
+            break;
+
+          case 'luxury': // 奢侈消费（兴趣 爱好 美容 保养）
+            if (checkEffectTrigger(0.7)) {
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+            }
+            break;
+
+          case 'daily': // 日常开销
+            if (checkEffectTrigger(0.3)) {
+              effectMessage = handleAttributeChange('strength', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('agility', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('intelligence', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('charisma', 'increase', effectMessage);
+              effectMessage = handleAttributeChange('health', 'increase', effectMessage);
+            }
+            break;
+        }
+      }
+
+      // 如果没有属性变化，添加提示
+      if (effectMessage === `消费 ${amount} 金币\n`) {
+        effectMessage += "(属性无变化)\n";
+      }
+
+      save();
+      document.getElementById('amount').value = '';
+      alert(effectMessage);
+    });
+
+    // 记录收入按钮事件
+    document.getElementById('addIncomeBtn').addEventListener('click', function() {
+      let amount = parseFloat(document.getElementById('incomeAmount').value);
+      
+      if (!amount || amount <= 0) {
+        alert('请输入有效的金额');
+        return;
+      }
+
+      state.gold += amount;
+      save();
+      document.getElementById('incomeAmount').value = '';
+      alert(`成功增加 ${amount} 金币！`);
+    });
+
+    // 设定数值按钮事件
+    document.getElementById('setAttrBtn').addEventListener('click', function() {
+      const attr = document.getElementById('attrSelect').value;
+      const val = parseInt(document.getElementById('newValue').value);
+      
+      if (!isNaN(val) && val >= 0) {
+        if (attr === 'health') {
+          state.health = Math.min(100, val);
+        } else {
+          state[attr] = val;
+        }
+        save();
+        document.getElementById('newValue').value = '';
+        alert(`${getAttributeName(attr)}已设置为 ${state[attr]}`);
+      } else {
+        alert('请输入有效的正整数');
+      }
+    });
+
+    // Tab切换功能
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById(this.getAttribute('data-page')).classList.add('active');
+      });
+    });
+
+    // 复选框事件监听
+    document.getElementById('enableNegative').addEventListener('change', function() {
+      state.enableNegative = this.checked;
+      save();
+    });
+
+    document.getElementById('enableNegativeStates').addEventListener('change', function() {
+      state.enableNegativeStates = this.checked;
+      if (!this.checked) {
+        state.gluttony = 0;
+        state.greed = 0;
+      }
+      save();
+    });
+    
+    // 修改按钮事件 - 切换显示/隐藏
+    document.getElementById('showExpenseStatsBtn').addEventListener('click', function() {
+      const statsContainer = document.getElementById('statsContainer');
+      if (statsContainer.style.display === 'none' || statsContainer.style.display === '') {
+        showExpenseStats();
+      } else {
+        hideStats();
+      }
+    });
+
+    // 显示消费统计showExpenseStats函数
+    function showExpenseStats() {
+      // 确保state.expenseRecords存在且是最新的
+      if (!Array.isArray(state.expenseRecords)) {
+        state.expenseRecords = [];
+        save(); 
+      }
+
+      // 检查是否有记录
+      const validRecords = state.expenseRecords.filter(record => 
+        record && 
+        typeof record.amount === 'number' && 
+        record.amount > 0 &&
+        record.category && 
+        categoryNames[record.category]
+      );
+
+      if (validRecords.length === 0) {
+        alert('暂无消费记录');
+        return;
+      }
+
+      // 强制显示统计区域（无论当前状态如何）
+      const statsContainer = document.getElementById('statsContainer');
+      statsContainer.style.display = 'block';
+      document.getElementById('showExpenseStatsBtn').textContent = '隐藏消费统计';
+
+      // 计算各类别的总金额和百分比
+      const categoryStats = {};
+      let totalAmount = 0;
+  
+      // 只分析最近100条记录
+      const recentRecords = state.expenseRecords.slice(0, 100);
+  
+      validRecords.forEach(record => {
+        if (!categoryStats[record.category]) {
+          categoryStats[record.category] = { amount: 0, count: 0 };
+        }
+        categoryStats[record.category].amount += record.amount;
+        categoryStats[record.category].count++;
+        totalAmount += record.amount;
+      });
+
+      // 准备图表数据
+      const labels = Object.keys(categoryStats).map(cat => categoryNames[cat]);
+      const data = Object.values(categoryStats).map(stat => stat.amount);
+  
+      // 销毁旧图表（安全方式）
+      const chartCanvas = document.getElementById('expenseChart');
+      if (window.expenseChart instanceof Chart) {
+        window.expenseChart.destroy();
+      }
+
+      // 创建新图表
+      window.expenseChart = new Chart(chartCanvas.getContext('2d'), {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.7)',
+              'rgba(54, 162, 235, 0.7)',
+              'rgba(255, 206, 86, 0.7)',
+              'rgba(75, 192, 192, 0.7)',
+              'rgba(153, 102, 255, 0.7)',
+              'rgba(255, 159, 64, 0.7)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { color: '#e0e0e0' }
+            }
+          }
+        }
+      });
+
+      // 更新统计列表
+      const statsList = document.getElementById('expenseStatsList');
+      statsList.innerHTML = '';
+
+      for (const [category, stat] of Object.entries(categoryStats)) {
+        const percentage = (stat.amount / totalAmount * 100).toFixed(1);
+        const item = document.createElement('div');
+        item.className = 'expense-stat-item';
+        item.innerHTML = `
+          <span class="expense-stat-label">${categoryNames[category]}</span>
+          <span class="expense-stat-value">${stat.amount} 金币 (${percentage}%)</span>
+        `;
+        statsList.appendChild(item);
+      }
+    }
+
+    // 隐藏统计区域
+    function hideStats() {
+      document.getElementById('statsContainer').style.display = 'none';
+      document.getElementById('showExpenseStatsBtn').textContent = '显示消费统计';
+    }
+
+    // 物品数据库 (只有创作者可以修改)
+    const itemDatabase = {
+      skills: [
+        { id: 'skill_0', name: '无技能', description: '没有技能', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_0.png' },
+        { id: 'skill_1', name: '无敌星星', description: '使用后，敌人的下一个行动无法对玩家造成攻击伤害', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_1.png', rarity: 'common' },
+        { id: 'skill_2', name: '阿玛忒拉斯', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_2.png', rarity: 'common' },
+        { id: 'skill_3', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_3.png', rarity: 'common' },
+        { id: 'skill_4', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_4.png', rarity: 'common' },
+        { id: 'skill_5', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_5.png', rarity: 'common' },
+        { id: 'skill_6', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_6.png', rarity: 'common' },
+        { id: 'skill_7', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_7.png', rarity: 'common' },
+        { id: 'skill_8', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_8.png', rarity: 'common' },
+        { id: 'skill_9', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_9.png', rarity: 'common' },
+        { id: 'skill_10', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_10.png', rarity: 'common' },
+      ],
+      accessories: [
+        { id: 'acc_0', name: '无饰品', description: '没有饰品', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_0.png' },
+        { id: 'acc_1', name: '不死图腾', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/acc_1.webp', rarity: 'common' },
+        { id: 'acc_2', name: '无饰品', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/acc_2.png', rarity: 'common' },
+        { id: 'acc_3', name: '无饰品', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/acc_3.png', rarity: 'common' },
+        { id: 'acc_4', name: '无饰品', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/acc_4.png', rarity: 'common' },
+      ]
+    };
+
+    // 玩家拥有的物品
+    const playerInventory = {
+      // 玩家拥有的技能ID
+      skills: ['skill_0', 'skill_1', 'skill_2', 'skill_3', 'skill_4', 'skill_5', 'skill_6', 'skill_7', 'skill_8', 'skill_9', 'skill_10'], 
+      // 玩家拥有的饰品ID
+      accessories: ['acc_0','acc_1', 'acc_2', 'acc_3', 'acc_4'] // 玩家拥有的饰品ID
+    };
+
+    // 当前选中的物品
+    let currentSelectedItem = null;
+
+    // 历练点数
+    let adventurePoints = 0;
+
+    // 初始化存储UI
+    function initStorageUI() {
+      // 关闭按钮事件
+      document.getElementById('closeStorage').addEventListener('click', function() {
+        const overlay = document.getElementById('storageOverlay');
+        const slotIndex = overlay.dataset.slotIndex;
+        const category = overlay.dataset.category;
+
+        if (slotIndex !== undefined && category) {
+          // 如果有选中物品则使用选中物品，否则保持原样（不重置为默认）
+          if (currentSelectedItem) {
+            // 更新装备状态
+            equippedItems[category][slotIndex] = currentSelectedItem.id;
+            save(); 
+            }
+          
+            // 更新UI显示
+            const slotElement = document.getElementById(`${category}Slot${parseInt(slotIndex) + 1}`);
+            if (slotElement) {
+              const itemId = currentSelectedItem ? currentSelectedItem.id : equippedItems[category][slotIndex];
+              const itemData = itemDatabase[category].find(item => item.id === itemId);
+
+              if (itemData) {
+                slotElement.textContent = itemData.name;
+                slotElement.className = `rarity-${itemData.rarity || 'common'}`;
+              } else {
+                console.error('找不到物品数据:', itemId);
+                slotElement.textContent = '[无物品]';
+                slotElement.className = 'rarity-common';
+	      }
+            }
+          }
+
+          // 重置选中状态
+          currentSelectedItem = null;
+          overlay.style.display = 'none';
+        });
+
+      // 为所有"更换"按钮添加事件
+      document.querySelectorAll('.skill-slot button, .accessory-slot button').forEach((btn, index) => {
+        btn.addEventListener('click', function() {
+          const parent = this.closest('.skill-slot, .accessory-slot');
+          const isSkill = parent.classList.contains('skill-slot');
+
+          // 直接从按钮的父元素ID中提取slotIndex
+          const slotId = parent.id; // 例如 "skillSlot1"
+          const slotIndex = parseInt(slotId.replace(/[^\d]/g, '')) - 1;
+        
+          const overlay = document.getElementById('storageOverlay');
+          overlay.dataset.slotIndex = slotIndex;
+	  overlay.dataset.category = isSkill ? 'skills' : 'accessories';
+
+          openStorageUI(isSkill ? 'skills' : 'accessories');
+        });
+      });
+    }
+
+    // 打开存储UI
+    function openStorageUI(pageName) {
+      const overlay = document.getElementById('storageOverlay');
+      const title = document.getElementById('storageTitle');
+      const itemName = document.getElementById('itemNameHolder');
+      const itemDesc = document.getElementById('itemDescriptionHolder');
+      const itemGrid = document.getElementById('itemGrid');
+      const pointsDisplay = document.getElementById('adventurePoints');
+
+      // 设置标题
+      title.textContent = pageName === 'skills' ? '技能' : '饰品';
+    
+      // 更新历练点显示
+      pointsDisplay.textContent = adventurePoints;
+
+      // 清空现有内容
+      itemGrid.innerHTML = '';
+      itemName.textContent = '未选择';
+      itemDesc.textContent = '请选择一个物品查看详情';
+
+      // 获取当前类别的物品
+      const category = pageName;
+      const availableItems = itemDatabase[category].filter(item => 
+        playerInventory[category].includes(item.id)
+      );
+
+      // 添加物品图标
+      availableItems.forEach(item => {
+        const itemIcon = document.createElement('div');
+        itemIcon.className = 'item-icon';
+        itemIcon.dataset.id = item.id;
+        itemIcon.dataset.category = category;
+      
+        // 创建图片元素
+        const img = document.createElement('img');
+        img.src = item.icon;
+        img.alt = item.name;
+      
+        itemIcon.appendChild(img);
+        itemGrid.appendChild(itemIcon);
+
+        // 添加点击事件
+        itemIcon.addEventListener('click', function() {
+          // 更新当前选中的物品
+          currentSelectedItem = item;
+          console.log('选中物品:', currentSelectedItem); // 调试用
+
+          // 更新物品信息显示
+          itemName.textContent = item.name;
+          itemDesc.textContent = item.description;
+          itemName.className = `item-name rarity-${item.rarity}`;
+        
+          // 高亮选中的物品
+          document.querySelectorAll('.item-icon').forEach(icon => {
+            icon.style.boxShadow = 'none';
+          });
+          this.style.boxShadow = '0 0 10px rgba(127, 255, 212, 0.5)';
+        });
+      });
+
+      // 显示UI
+      overlay.style.display = 'flex';
+    }
+
+    // 初始化装备显示
+    function initEquippedItemsDisplay() {
+      // 初始化技能槽
+      equippedItems.skills.forEach((skillId, index) => {
+        const slotElement = document.getElementById(`skillSlot${index+1}`);
+        const itemData = itemDatabase.skills.find(item => item.id === skillId);
+      
+        if (slotElement && itemData) {
+          slotElement.textContent = itemData.name;
+          slotElement.className = `rarity-${itemData.rarity}`;
+        }
+      });
+    
+      // 初始化饰品槽
+      equippedItems.accessories.forEach((accId, index) => {
+        const slotElement = document.getElementById(`accessorySlot${index+1}`);
+        const itemData = itemDatabase.accessories.find(item => item.id === accId);
+      
+        if (slotElement && itemData) {
+          slotElement.textContent = itemData.name;
+          slotElement.className = `rarity-${itemData.rarity}`;
+        }
+      });
+    }
+
+    // 初始化显示
+    updateDisplay();
+    initStorageUI(); 
+    initEquippedItemsDisplay();
+  </script>
+</body>
+</html>
