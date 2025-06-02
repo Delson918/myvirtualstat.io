@@ -291,6 +291,138 @@
     .expense-stats::-webkit-scrollbar-track {
       background: #2c2c2c;
     }
+
+    /* 技能和饰品样式 */
+    .skill-grid, .accessory-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .skill-slot, .accessory-slot {
+      background: #2c2c2c;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .small-btn {
+      width: auto;
+      padding: 5px 10px;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    
+    /* 存储UI样式 */
+    .storage-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .storage-container {
+      background: #1e1e1e;
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      border-radius: 12px;
+      padding: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .storage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .storage-title {
+      color: #7fffd4;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .close-storage {
+      background: #f44336;
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      width: max-content;
+    }
+    .storage-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+    .item-info {
+      background: #2c2c2c;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    .item-name {
+      color: #7fffd4;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .item-description {
+      color: #ccc;
+      font-size: 14px;
+    }
+    .item-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .item-icon {
+      width: 80px;
+      height: 80px;
+      background: #333;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .item-icon:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(127, 255, 212, 0.5);
+    }
+    .item-icon img {
+      max-width: 70px;
+      max-height: 70px;
+    }
+    .adventure-points {
+      text-align: left;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    
+    /* 新增稀有度颜色样式 */
+    .rarity-common {
+      color: #e0e0e0; /* 灰白色 - 普通 */
+    }
+    .rarity-uncommon {
+      color: #4caf50; /* 绿色 - 稀有 */
+    }
+    .rarity-rare {
+      color: #2196F3; /* 蓝色 - 罕见 */
+    }
+    .rarity-epic {
+      color: #9c27b0; /* 紫色 - 史诗 */
+    }
+    .rarity-legendary {
+      color: #ffeb3b; /* 黄色 - 传奇 */
+    }  
   </style>
 </head>
 <body>
@@ -390,7 +522,7 @@
       </div>
     </div>
     
-    <!-- 冒险页 -->
+    <!-- 历练页 -->
     <div id="adventurePage" class="page">
       <div class="section">
         <div class="avatar-container">
@@ -436,41 +568,41 @@
         <div class="section" style="margin-top: 20px;">
           <h3>技能</h3>
           <div class="skill-grid">
-            <div class="skill-slot">
-              <span>[无技能]</span>
-              <button class="small-btn">更换</button>
+            <div class="skill-slot" data-slot-index="0" data-category="skills">
+              <span class="rarity-common" id="skillSlot1">[无技能]</span>
+              <button class="small-btn change-item-btn">更换</button>
             </div>
-            <div class="skill-slot">
-              <span>[无技能]</span>
-              <button class="small-btn">更换</button>
+            <div class="skill-slot" data-slot-index="1" data-category="skills">
+              <span class="rarity-common" id="skillSlot2">[无技能]</span>
+              <button class="small-btn change-item-btn">更换</button>
             </div>
-            <div class="skill-slot">
-              <span>[无技能]</span>
-              <button class="small-btn">更换</button>
+            <div class="skill-slot" data-slot-index="2" data-category="skills">
+              <span class="rarity-common" id="skillSlot3">[无技能]</span>
+              <button class="small-btn change-item-btn">更换</button>
             </div>
-            <div class="skill-slot">
-              <span>[无技能]</span>
-              <button class="small-btn">更换</button>
+            <div class="skill-slot" data-slot-index="3" data-category="skills">
+              <span class="rarity-common" id="skillSlot4">[无技能]</span>
+              <button class="small-btn change-item-btn">更换</button>
             </div>
           </div>
           
           <h3>饰品</h3>
           <div class="accessory-grid">
-            <div class="accessory-slot">
-              <span>[无饰品]</span>
-              <button class="small-btn">更换</button>
+            <div class="accessory-slot" data-slot-index="0" data-category="accessories">
+              <span class="rarity-common" id="accessorySlot1">[无饰品]</span>
+              <button class="small-btn change-item-btn">更换</button>
             </div>
-            <div class="accessory-slot">
-              <span>[无饰品]</span>
-              <button class="small-btn">更换</button>
+            <div class="accessory-slot" data-slot-index="1" data-category="accessories">
+              <span class="rarity-common" id="accessorySlot2">[无饰品]</span>
+              <button class="small-btn change-item-btn">更换</button>
             </div>
-            <div class="accessory-slot">
-              <span>[无饰品]</span>
-              <button class="small-btn">更换</button>
+            <div class="accessory-slot" data-slot-index="2" data-category="accessories">
+              <span class="rarity-common" id="accessorySlot3">[无饰品]</span>
+              <button class="small-btn change-item-btn">更换</button>
             </div>
-            <div class="accessory-slot">
-              <span>[无饰品]</span>
-              <button class="small-btn">更换</button>
+            <div class="accessory-slot" data-slot-index="3" data-category="accessories">
+              <span class="rarity-common" id="accessorySlot4">[无饰品]</span>
+              <button class="small-btn change-item-btn">更换</button>
             </div>
           </div>
         </div>
@@ -509,7 +641,7 @@
         
         <button id="setAttrBtn">设定数值</button>
 
-        <!-- 修改为直接显示在页面上的统计区域 -->
+        <!-- 统计区域 -->
         <div class="stats-container" id="statsContainer" style="display: none;">
           <div class="stats-header">
             <h3 class="stats-title">消费统计</h3>
@@ -528,11 +660,30 @@
       <!-- 切换显示/隐藏统计 -->
       <button id="showExpenseStatsBtn" style="margin-top: 20px; margin-bottom: 50px; background: #2196F3;">显示消费统计</button>
 
-      <div class="version-text">Version: 1.6.2.9</div>
+      <div class="version-text">Version: 1.6.4.0</div>
     </div>
   </div>
 
-  
+  <!-- 存储UI -->
+  <div class="storage-overlay" id="storageOverlay">
+    <div class="storage-container">
+      <div class="storage-header">
+        <div class="storage-title" id="storageTitle">技能</div>
+        <button class="close-storage" id="closeStorage">关闭</button>
+      </div>
+      <div class="adventure-points">历练点: <span id="adventurePoints">0</span></div>
+      <div class="storage-content">
+        <div class="item-info">
+          <div class="item-name" id="itemNameHolder">未选择</div>
+          <div class="item-description" id="itemDescriptionHolder">请选择一个物品查看详情</div>
+        </div>
+        <div class="item-grid" id="itemGrid">
+          <!-- 这里会动态填充物品图标 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 底部导航栏 -->
   <div class="tab-bar">
     <div class="tab active" data-page="attributesPage">角色属性</div>
@@ -555,7 +706,17 @@
       avatar: '',
       enableNegative: false,
       enableNegativeStates: false,
-      expenseRecords: [] // 新增的消费记录数组
+      expenseRecords: [], 
+      equippedItems: {
+        skills: ['skill_0', 'skill_0', 'skill_0', 'skill_0'],
+        accessories: ['acc_0', 'acc_0', 'acc_0', 'acc_0']
+      }
+    };
+
+    // 玩家装备状态
+    const equippedItems = state.equippedItems || {
+      skills: Array(4).fill('skill_0'), // 4个技能槽默认无技能
+      accessories: Array(4).fill('acc_0') // 4个饰品槽默认无饰品
     };
 
     // 消费类别映射
@@ -578,6 +739,11 @@
     function save() {
       // 确保健康值不超过100
       state.health = Math.min(100, state.health);
+      localStorage.setItem('charState', JSON.stringify(state));
+
+      // 保存装备状态
+      state.equippedItems = equippedItems;
+  
       localStorage.setItem('charState', JSON.stringify(state));
 
       // 同步头像到冒险页面
@@ -661,7 +827,10 @@
           element.textContent = state[key];
         }
       }
-      
+
+      // 更新技能和饰品显示
+      initEquippedItemsDisplay();
+  
       // 计算冒险属性
       const D9 = Number(state.strength) || 0;   // 力量
       const D10 = Number(state.intelligence) || 0; // 智力
@@ -1149,8 +1318,191 @@
       document.getElementById('showExpenseStatsBtn').textContent = '显示消费统计';
     }
 
+    // 物品数据库 (只有创作者可以修改)
+    const itemDatabase = {
+      skills: [
+        { id: 'skill_0', name: '无技能', description: '没有技能', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_0.png' },
+        { id: 'skill_1', name: '无敌星星', description: '使用后，敌人的下一个行动无法对玩家造成攻击伤害', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_1.png', rarity: 'common' },
+        { id: 'skill_2', name: '阿玛忒拉斯', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_2.png', rarity: 'common' },
+        { id: 'skill_3', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_3.png', rarity: 'common' },
+        { id: 'skill_4', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_4.png', rarity: 'common' },
+        { id: 'skill_5', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_5.png', rarity: 'common' },
+        { id: 'skill_6', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_6.png', rarity: 'common' },
+        { id: 'skill_7', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_7.png', rarity: 'common' },
+        { id: 'skill_8', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_8.png', rarity: 'common' },
+        { id: 'skill_9', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_9.png', rarity: 'common' },
+        { id: 'skill_10', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_10.png', rarity: 'common' },
+      ],
+      accessories: [
+        { id: 'acc_0', name: '无饰品', description: '没有饰品', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_0.png' },
+        { id: 'acc_1', name: '不死图腾', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/acc_1.webp', rarity: 'common' },
+        { id: 'acc_2', name: '无饰品', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/acc_2.png', rarity: 'common' },
+        { id: 'acc_3', name: '无饰品', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/acc_3.png', rarity: 'common' },
+        { id: 'acc_4', name: '无饰品', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/acc_4.png', rarity: 'common' },
+      ]
+    };
+
+    // 玩家拥有的物品
+    const playerInventory = {
+      // 玩家拥有的技能ID
+      skills: ['skill_0', 'skill_1', 'skill_2', 'skill_3', 'skill_4', 'skill_5', 'skill_6', 'skill_7', 'skill_8', 'skill_9', 'skill_10'], 
+      // 玩家拥有的饰品ID
+      accessories: ['acc_0','acc_1', 'acc_2', 'acc_3', 'acc_4'] // 玩家拥有的饰品ID
+    };
+
+    // 当前选中的物品
+    let currentSelectedItem = null;
+
+    // 历练点数
+    let adventurePoints = 0;
+
+    // 初始化存储UI
+    function initStorageUI() {
+      // 关闭按钮事件
+      document.getElementById('closeStorage').addEventListener('click', function() {
+        const overlay = document.getElementById('storageOverlay');
+        const slotIndex = overlay.dataset.slotIndex;
+        const category = overlay.dataset.category;
+
+        if (currentSelectedItem) {
+          // 更新装备状态
+          equippedItems[category][slotIndex] = currentSelectedItem.id;
+          save();
+
+          // 更新UI显示
+          const slotElement = document.querySelector(`.${category}-slot[data-slot-index="${slotIndex}"] span`);
+          if (slotElement) {
+            slotElement.textContent = currentSelectedItem.name;
+            slotElement.className = `rarity-${currentSelectedItem.rarity || 'common'}`;
+          }
+        }
+
+        // 重置选中状态
+        currentSelectedItem = null;
+        overlay.style.display = 'none';
+      });
+
+      // 为所有"更换"按钮添加事件 - 使用事件委托
+      document.addEventListener('click', function(e) {
+        // 检查点击的是否是更换按钮
+        if (e.target && e.target.classList.contains('change-item-btn')) {
+          const button = e.target;
+          const slotContainer = button.closest('.skill-slot, .accessory-slot');
+
+          if (!slotContainer) return;
+
+          const slotIndex = slotContainer.dataset.slotIndex;
+          const category = slotContainer.dataset.category;
+
+          // 打开存储UI并传递参数
+          const overlay = document.getElementById('storageOverlay');
+          overlay.dataset.slotIndex = slotIndex;
+          overlay.dataset.category = category;
+          openStorageUI(category);
+        }
+      });
+    }
+
+    // 打开存储UI
+    function openStorageUI(pageName) {
+      const overlay = document.getElementById('storageOverlay');
+      const title = document.getElementById('storageTitle');
+      const itemName = document.getElementById('itemNameHolder');
+      const itemDesc = document.getElementById('itemDescriptionHolder');
+      const itemGrid = document.getElementById('itemGrid');
+      const pointsDisplay = document.getElementById('adventurePoints');
+
+      // 设置标题
+      title.textContent = pageName === 'skills' ? '技能' : '饰品';
+    
+      // 更新历练点显示
+      pointsDisplay.textContent = adventurePoints;
+
+      // 清空现有内容
+      itemGrid.innerHTML = '';
+      itemName.textContent = '未选择';
+      itemDesc.textContent = '请选择一个物品查看详情';
+
+      // 获取当前类别的物品
+      const category = pageName;
+      const availableItems = itemDatabase[category].filter(item => 
+        playerInventory[category].includes(item.id)
+      );
+
+      // 添加物品图标
+      availableItems.forEach(item => {
+        const itemIcon = document.createElement('div');
+        itemIcon.className = 'item-icon';
+        itemIcon.dataset.id = item.id;
+        itemIcon.dataset.category = category;
+      
+        // 创建图片元素
+        const img = document.createElement('img');
+        img.src = item.icon;
+        img.alt = item.name;
+      
+        itemIcon.appendChild(img);
+        itemGrid.appendChild(itemIcon);
+
+        // 添加点击事件
+        itemIcon.addEventListener('click', function() {
+          // 更新当前选中的物品
+          currentSelectedItem = item;
+
+          // 更新物品信息显示
+          itemName.textContent = item.name;
+          itemDesc.textContent = item.description;
+          itemName.className = `item-name rarity-${item.rarity || 'common'}`;
+        
+          // 高亮选中的物品
+          document.querySelectorAll('.item-icon').forEach(icon => {
+            icon.style.boxShadow = 'none';
+          });
+          this.style.boxShadow = '0 0 10px rgba(127, 255, 212, 0.5)';
+        });
+      });
+
+      // 显示UI
+      overlay.style.display = 'flex';
+    }
+
+    // 初始化装备显示
+    function initEquippedItemsDisplay() {
+      // 初始化技能槽
+      equippedItems.skills.forEach((skillId, index) => {
+        const slotContainer = document.querySelector(`.skill-slot[data-slot-index="${index}"]`);
+        if (slotContainer) {
+          const slotElement = slotContainer.querySelector('span');
+          const itemData = itemDatabase.skills.find(item => item.id === skillId);
+    
+          if (slotElement && itemData) {
+            slotElement.textContent = itemData.name;
+            slotElement.className = `rarity-${itemData.rarity || 'common'}`;
+          }
+        }
+      });
+    
+      // 初始化饰品槽
+      equippedItems.accessories.forEach((accId, index) => {
+        const slotContainer = document.querySelector(`.accessory-slot[data-slot-index="${index}"]`);
+        if (slotContainer) {
+          const slotElement = slotContainer.querySelector('span');
+          const itemData = itemDatabase.accessories.find(item => item.id === accId);
+    
+          if (slotElement && itemData) {
+            slotElement.textContent = itemData.name;
+            slotElement.className = `rarity-${itemData.rarity || 'common'}`;
+          }
+        }
+      });
+    }
+
     // 初始化显示
-    updateDisplay();
+    document.addEventListener('DOMContentLoaded', function() {
+      updateDisplay();
+      initStorageUI(); 
+      initEquippedItemsDisplay();
+    });
   </script>
 </body>
 </html>
