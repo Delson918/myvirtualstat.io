@@ -660,7 +660,7 @@
       <!-- 切换显示/隐藏统计 -->
       <button id="showExpenseStatsBtn" style="margin-top: 20px; margin-bottom: 50px; background: #2196F3;">显示消费统计</button>
 
-      <div class="version-text">Version: 1.6.4.0</div>
+      <div class="version-text">Version: 1.6.4.1</div>
     </div>
   </div>
 
@@ -840,11 +840,11 @@
        const D14 = Math.min(Number(state.greed) || 0, 100);     // 贪婪
 
       // 计算生命值
-      const hp = Math.round((80 + (D9 * 0.8) + (D10 * 0.3) + (D11 * 0.1)) * (1 - (D13 / 100) * 0.50));
+      const hp = Math.round((80 + (D9 * 0.8) + (D10 * 0.3) + (D11 * 0.1)) * (1 - (D13 / 100) * 0.80));
       document.getElementById('hp').textContent = isNaN(hp) ? 0 : Math.max(0, hp); // 确保不小于0
 
       // 计算谋略值
-      const strategy = Math.round((20 + (D10 * 0.1) + (D11 * 0.1) + (D12 * 0.1)) * (1 - (D14 / 100) * 0.50));
+      const strategy = Math.round((20 + (D10 * 0.1) + (D11 * 0.1) + (D12 * 0.1)) * (1 - (D14 / 100) * 0.80));
       document.getElementById('strategy').textContent = Math.max(0, strategy);
 
       // 计算嘲讽值
@@ -1322,7 +1322,7 @@
     const itemDatabase = {
       skills: [
         { id: 'skill_0', name: '无技能', description: '没有技能', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_0.png' },
-        { id: 'skill_1', name: '无敌星星', description: '使用后，敌人的下一个行动无法对玩家造成攻击伤害', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_1.png', rarity: 'common' },
+        { id: 'skill_1', name: '无敌星星', description: '使用后，敌人的下一个行动无法对玩家造成攻击伤害', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_1.gif', rarity: 'common' },
         { id: 'skill_2', name: '阿玛忒拉斯', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_2.png', rarity: 'common' },
         { id: 'skill_3', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_3.png', rarity: 'common' },
         { id: 'skill_4', name: '无技能', description: '暂无描述', icon: 'https://Delson918.github.io/myvirtualstat.io/skill_4.png', rarity: 'common' },
@@ -1365,6 +1365,16 @@
         const category = overlay.dataset.category;
 
         if (currentSelectedItem) {
+          // 检查是否已在其他槽位装备该物品
+          const isAlreadyEquipped = equippedItems[category].some((itemId, index) => 
+            itemId === currentSelectedItem.id && index != slotIndex
+          );
+
+          if (isAlreadyEquipped && currentSelectedItem.id !== 'skill_0' && currentSelectedItem.id !== 'acc_0') {
+            alert('该物品已在其他槽位装备！');
+            return;
+          }
+
           // 更新装备状态
           equippedItems[category][slotIndex] = currentSelectedItem.id;
           save();
@@ -1393,6 +1403,8 @@
 
           const slotIndex = slotContainer.dataset.slotIndex;
           const category = slotContainer.dataset.category;
+      
+          console.log("打开存储UI:", category, "槽位:", slotIndex);
 
           // 打开存储UI并传递参数
           const overlay = document.getElementById('storageOverlay');
@@ -1444,10 +1456,25 @@
         itemIcon.appendChild(img);
         itemGrid.appendChild(itemIcon);
 
+        // 检查是否已装备该物品
+        const isEquipped = equippedItems[category].includes(item.id);
+        if (isEquipped && item.id !== 'skill_0' && item.id !== 'acc_0') {
+          itemIcon.style.opacity = '0.5';
+          itemIcon.style.cursor = 'not-allowed';
+          itemIcon.title = '已装备该物品';
+        }
+
         // 添加点击事件
         itemIcon.addEventListener('click', function() {
+          // 如果是已装备的物品且不是"无技能"/"无饰品"，则不允许选择
+          if (isEquipped && item.id !== 'skill_0' && item.id !== 'acc_0') {
+            alert('该物品已在其他槽位装备！');
+            return;
+          }
+
           // 更新当前选中的物品
           currentSelectedItem = item;
+          console.log('选中物品:', currentSelectedItem);
 
           // 更新物品信息显示
           itemName.textContent = item.name;
