@@ -93,6 +93,8 @@
       border-top: 1px solid #333;
       position: fixed;
       bottom: 0;
+      left: 0;
+      right: 0;
       width: 100%;
     }
     .tab {
@@ -423,6 +425,88 @@
     .rarity-legendary {
       color: #ffeb3b; /* 黄色 - 传奇 */
     }  
+
+    /* 教程弹窗样式 */
+    .tutorial-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tutorial-container {
+      background: #1e1e1e;
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      border-radius: 12px;
+      padding: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tutorial-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .tutorial-title {
+      color: #7fffd4;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .close-tutorial {
+      background: #f44336;
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      width: max-content;
+    }
+
+    .tutorial-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .tutorial-page {
+      display: none;
+    }
+
+    .tutorial-page.active {
+      display: block;
+    }
+
+    .tutorial-image {
+      max-width: 100%;
+      height: auto;
+      margin: 15px 0;
+      border-radius: 8px;
+      border: 2px solid #7fffd4;
+    }
+
+    .tutorial-navigation {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .tutorial-text {
+      line-height: 1.6;
+      margin-bottom: 15px;
+    }
   </style>
 </head>
 <body>
@@ -660,7 +744,10 @@
       <!-- 切换显示/隐藏统计 -->
       <button id="showExpenseStatsBtn" style="margin-top: 20px; margin-bottom: 50px; background: #2196F3;">显示消费统计</button>
 
-      <div class="version-text">Version: 1.6.4.1</div>
+      <!-- 教程 -->
+      <button id="showTutorialBtn" style="margin-top: 20px; margin-bottom: 20px; background: #9c27b0;">显示教程</button>
+
+      <div class="version-text">Version: 1.6.4.2</div>
     </div>
   </div>
 
@@ -680,6 +767,19 @@
         <div class="item-grid" id="itemGrid">
           <!-- 这里会动态填充物品图标 -->
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 教程弹窗 -->
+  <div class="tutorial-overlay" id="tutorialOverlay">
+    <div class="tutorial-container">
+      <div class="tutorial-header">
+        <div class="tutorial-title">游戏教程</div>
+        <button class="close-tutorial" id="closeTutorial">关闭</button>
+      </div>
+      <div class="tutorial-content" id="tutorialContent">
+        <!-- 教程页面将在这里动态加载 -->
       </div>
     </div>
   </div>
@@ -1524,10 +1624,139 @@
       });
     }
 
+    // 教程数据
+    const tutorialData = [
+      {
+        title: "欢迎来到主角养成器",
+        content: "这是一个帮助你记录生活消费并将其转化为角色属性的有趣小工具。",
+        image: "tutorial_welcome.png"
+      },
+      {
+        title: "角色属性",
+        content: "你的角色有四种主要属性：力量、敏捷、智力与魅力。通过不同的消费可以提升这些属性。",
+        image: "tutorial_attributes.png"
+      },
+      {
+        title: "记录消费",
+        content: "在'记录收支'页面，你可以记录消费金额并选择消费类别。不同的类别会影响不同的属性。",
+        image: "tutorial_expense.png"
+      },
+      {
+        title: "负面状态",
+        content: "如果在设置中开启负面状态模式，某些消费也会增加'暴食'和'贪婪'值。这些会影响你的历练属性。",
+        image: "tutorial_negative.png"
+      },
+      {
+        title: "装备系统",
+        content: "在'历练'页面，你可以装备不同的技能和饰品来增强你的角色（或许？）",
+        image: "tutorial_equipment.png",
+        extra: "技能和饰品可以通过多次历练有机会获得，不同的装备提供不同的效果哦。"
+      },
+      {
+        title: "历练",
+        content: "开启历练，将会进入小游戏。每次游玩都有机会获得不同的技能和饰品，以及稀有的历练点数。",
+        image: "tutorial_adventure.png",
+      },
+      {
+        title: "升级装备",
+        content: "获得的历练点数，可以用来升级装备，增强它们的效果。",
+        image: "tutorial_upgrade.png",
+        extra: "历练点数获取不易，请谨慎使用哦。"
+      },
+      {
+        title: "统计功能",
+        content: "当然，你也可以通过'查看消费统计'，来了解自己在各类别上的花费比例。",
+        image: "tutorial_stats.png"
+      }
+    ];
+
+    // 当前教程页索引
+    let currentTutorialPage = 0;
+
+    // 初始化教程系统
+    function initTutorial() {
+      // 显示教程按钮事件
+      document.getElementById('showTutorialBtn').addEventListener('click', function() {
+        showTutorialPage(0); // 从第一页开始
+        document.getElementById('tutorialOverlay').style.display = 'flex';
+      });
+  
+      // 关闭教程按钮事件
+      document.getElementById('closeTutorial').addEventListener('click', function() {
+        document.getElementById('tutorialOverlay').style.display = 'none';
+      });
+  
+      // 初始化教程内容
+      renderTutorialPages();
+    }
+
+    // 渲染所有教程页面
+    function renderTutorialPages() {
+      const tutorialContent = document.getElementById('tutorialContent');
+      tutorialContent.innerHTML = '';
+  
+      tutorialData.forEach((page, index) => {
+        const pageElement = document.createElement('div');
+        pageElement.className = `tutorial-page ${index === 0 ? 'active' : ''}`;
+        pageElement.id = `tutorialPage${index}`;
+    
+        let imageHtml = '';
+        if (page.image) {
+          imageHtml = `<img src="https://Delson918.github.io/myvirtualstat.io/${page.image}" class="tutorial-image" alt="${page.title}">`;
+        }
+    
+        let extraHtml = '';
+        if (page.extra) {
+          extraHtml = `<p class="tutorial-text">${page.extra}</p>`;
+        }
+    
+        pageElement.innerHTML = `
+          <h3>${page.title}</h3>
+          <p class="tutorial-text">${page.content}</p>
+          ${imageHtml}
+          ${extraHtml}
+          <div class="tutorial-navigation">
+            ${index > 0 ? '<button class="small-btn" onclick="prevTutorialPage()">上一页</button>' : '<div></div>'}
+            ${index < tutorialData.length - 1 ? '<button class="small-btn" onclick="nextTutorialPage()">下一页</button>' : '<div></div>'}
+          </div>
+        `;
+    
+        tutorialContent.appendChild(pageElement);
+      });
+    }
+
+    // 显示特定教程页
+    function showTutorialPage(index) {
+      document.querySelectorAll('.tutorial-page').forEach(page => {
+        page.classList.remove('active');
+      });
+  
+      const page = document.getElementById(`tutorialPage${index}`);
+      if (page) {
+        page.classList.add('active');
+        currentTutorialPage = index;
+      }
+    }
+
+    // 下一页
+    function nextTutorialPage() {
+      if (currentTutorialPage < tutorialData.length - 1) {
+        showTutorialPage(currentTutorialPage + 1);
+      }
+    }
+
+    // 上一页
+    function prevTutorialPage() {
+      if (currentTutorialPage > 0) {
+        showTutorialPage(currentTutorialPage - 1);
+      }
+    }
+
     // 初始化显示
     document.addEventListener('DOMContentLoaded', function() {
       updateDisplay();
       initStorageUI(); 
+      initTutorial();
       initEquippedItemsDisplay();
     });
   </script>
